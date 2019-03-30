@@ -17,6 +17,8 @@ from cv_bridge import CvBridge, CvBridgeError
 
 
 """
+TESTING FILES:
+include description of what it's testing, keep difference in files
 1) Map initializer
   -following documentation, setting up map array
   -translate EKF to map position

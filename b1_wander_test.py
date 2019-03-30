@@ -14,42 +14,7 @@ from kobuki_msgs.msg import BumperEvent, CliffEvent, WheelDropEvent
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-"""
-TESTING FILES:
-include description of what it's testing, keep difference in files
-1) Map initializer
-  -following documentation, setting up map array
-  -translate EKF to map position
-2) Wander function
-  -while not paused:
-    -while no obstacle:
-      current_pos = free
-      populate map with current position being free
-      move forward
-    -if obstacle:
-      get position of obstacle (?from depth camera, coordinates of what it is avoiding)
-      mark that position as occupied in map
-      turn (in some direction, some amount)
-      {basic:
-        if still occupied, keep turning
-        don't update map with additional turns }
-      {start off basic, add later:
-        if still occupied, update map and keep turning }
- 
-    
-  
-3) Populate_map (parameters: coordinate, occupied vs. free boolean: 0 is free, 1 is occupied)
-  -mark cell at coordinate that it's passed in
-  -updating map based on marked cell/coordinates/parameters 
-4) Pause (different then a shutdown function)
-  -leaves final map on the screen
-  -saves current map as png
-"""
-
-class Basic_Map:
-    """
-    This is a class for implementing and updating a basic map
-    """
+class B1_Wander_Test:
     def __init__(self):
       #INITIALIZER: 
         #TODO: needs all info about maps and such
@@ -89,10 +54,9 @@ class Basic_Map:
 
       # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
       self.rate = rospy.Rate(5)
-
-    def wander(self):
+      
+def wander(self):
       """
-      TODO: get location from obstacle that it bumped or sees
       Run until Ctrl+C pressed
       :return: None
       """
@@ -124,7 +88,6 @@ class Basic_Map:
       lobstacle.angular.z = (-radians(45))
 
       while not rospy.is_shutdown():
-        while not self.paused:
           if (self.crbump | self.lbump):
             rospy.sleep(1)
             # wherever the object is = occupied
@@ -135,12 +98,14 @@ class Basic_Map:
             rospy.sleep(1)
             
             if self.crbump:
+                    rospy.loginfo("CENTER RIGHT BUMP")
                     for i in range(10):
                         self.cmd_vel.publish(cr)
                         self.rate.sleep()
                     rospy.sleep(1) 
                     self.crbump = False
                 if self.lbump:
+                    rospy.loginfo("LEFT BUMP")
                     for i in range(10):
                         self.cmd_vel.publish(left)
                         self.rate.sleep()
@@ -151,6 +116,7 @@ class Basic_Map:
           while(self.robstacle):
             # wherever the object is = occupied
             # populate_map(object_pos, 1)
+            rospy.loginfo("RIGHT OBSTACLE")
             for i in range (0, 2):
               self.cmd_vel.publish(robstacle)
               self.rate.sleep()
@@ -158,6 +124,7 @@ class Basic_Map:
             self.robstacle = False
 
           while(self.lobstacle):
+            rospy.loginfo("LEFT OBSTACLE")
             # wherever the object is = occupied
             # populate_map(object_pos, 1)
             for i in range (0, 2):
@@ -288,9 +255,6 @@ class Basic_Map:
                 self.crbump = True
                 self.lbump = False  
     
-    def pause(self):
-      #TODO
-      return "not done"
 
     def shutdown(self):
         """
@@ -308,7 +272,7 @@ class Basic_Map:
 
     if __name__ == '__main__':
     try:
-        robot = Basic_Map()
+        robot = B1_Wander_Test()
         robot.wander()
     except Exception, err:
         rospy.loginfo("DepthScan node terminated.")

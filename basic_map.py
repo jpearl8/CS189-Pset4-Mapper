@@ -35,8 +35,7 @@ include description of what it's testing, keep difference in files
         don't update map with additional turns }
       {start off basic, add later:
         if still occupied, update map and keep turning }
-   -if paused:
-      call pause function
+ 
     
   
 3) Populate_map (parameters: coordinate, occupied vs. free boolean: 0 is free, 1 is occupied)
@@ -66,6 +65,8 @@ class Basic_Map:
       self.lobstacle = False
       self.robstacle = False
 
+      self.paused = False
+
       # Initiliaze
       rospy.init_node('Basic_Map', anonymous=False)
 
@@ -74,6 +75,7 @@ class Basic_Map:
       # What function to call when you ctrl + c    
       rospy.on_shutdown(self.shutdown)
 
+    
       # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
       self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
 
@@ -120,6 +122,74 @@ class Basic_Map:
       lobstacle.linear.x = 0
       lobstacle.angular.z = (-radians(45))
 
+      while not rospy.is_shutdown():
+        while not self.paused:
+          if (self.crbump | self.lbump):
+            rospy.sleep(1)
+            # wherever the object is = occupied
+            # populate_map(object_pos, 1)
+            for i in range (0, 3):
+              self.cmd_vel.publish(backwards)
+              self.rate.sleep()
+            rospy.sleep(1)
+            
+            if self.crbump:
+                    for i in range(10):
+                        self.cmd_vel.publish(cr)
+                        self.rate.sleep()
+                    rospy.sleep(1) 
+                    self.crbump = False
+                if self.lbump:
+                    for i in range(10):
+                        self.cmd_vel.publish(left)
+                        self.rate.sleep()
+                    rospy.sleep(1) 
+                    self.lbump = False
+
+
+          while(self.robstacle):
+            # wherever the object is = occupied
+            # populate_map(object_pos, 1)
+            for i in range (0, 2):
+              self.cmd_vel.publish(robstacle)
+              self.rate.sleep()
+            rospy.sleep(.5)
+            self.robstacle = False
+
+          while(self.lobstacle):
+            # wherever the object is = occupied
+            # populate_map(object_pos, 1)
+            for i in range (0, 2):
+              self.cmd_vel.publish(lobstacle)
+              self.rate.sleep()
+            rospy.sleep(.5)
+            self.lobstacle = False
+
+          else:  
+            # current_pos = free
+            # populate_map(current_pos, 0)
+            move_cmd.linear.x = self.lin_speed
+            move_cmd.angular.z = 0
+          
+          self.cmd_vel.publish(move_cmd)
+          self.rate.sleep()
+
+
+"""  -while not paused:
+    -while no obstacle:
+      current_pos = free
+      populate map with current position being free
+      move forward
+    -if obstacle:
+      get position of obstacle (?from depth camera, coordinates of what it is avoiding)
+      mark that position as occupied in map
+      turn (in some direction, some amount)
+      {basic:
+        if still occupied, keep turning
+        don't update map with additional turns }
+      {start off basic, add later:
+        if still occupied, update map and keep turning }
+"""
 
     def bound_object(self, img_in):
         """
@@ -235,7 +305,7 @@ class Basic_Map:
     if __name__ == '__main__':
     try:
         robot = Basic_Map()
-        robot.run()
+        robot.wander()
     except Exception, err:
         rospy.loginfo("DepthScan node terminated.")
         print err

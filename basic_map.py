@@ -166,6 +166,9 @@ class Basic_Map:
             self.lobstacle = False
 
           else:  
+            rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
+                self.position[0], self.position[1], degrees(self.orientation)))
+            current_pos = (self.position[0], self.position[1])
             # current_pos = free
             # populate_map(current_pos, 0)
             move_cmd.linear.x = self.lin_speed
@@ -193,7 +196,7 @@ class Basic_Map:
 
     def bound_object(self, img_in):
         """
-        Draw a bounding box around the largest blue object in the scene
+        Draw a bounding box around the largest object in the scene
         :param img: RGB camera image
         :return: Image with bounding box
         """

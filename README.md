@@ -7,6 +7,8 @@ Active files:
   
   Wander - b1_wander.py
   
+To do: need to figure out when the obstacle bool should be updated, and what the position of the obstacle is. Also need to come up with translation from world map to pixel map 
+  
 Strategy:
   1) Map initializer: 
     - following documentation, setting up map array

@@ -314,9 +314,9 @@ class B1_Wander_Test:
         rospy.sleep(5)
 
     if __name__ == '__main__':
-    try:
-        robot = B1_Wander_Test()
-        robot.wander()
-    except Exception, err:
-        rospy.loginfo("DepthScan node terminated.")
-        print err
+        try:
+            robot = B1_Wander_Test()
+            robot.wander()
+        except Exception, err:
+            rospy.loginfo("DepthScan node terminated.")
+            print err

@@ -95,112 +95,112 @@ class B1_Wander_Test:
       # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
       self.rate = rospy.Rate(5)
       
-def wander(self):
-      """
-      Run until Ctrl+C pressed
-      :return: None
-      """
+    def wander(self):
+        """
+        Run until Ctrl+C pressed
+        :return: None
+        """
 
-      move_cmd = Twist()
-      backwards = Twist()
+        move_cmd = Twist()
+        backwards = Twist()
 
-      lobstacle = Twist()
-      robstacle = Twist()
-      cr = Twist()
-      left = Twist()
+        lobstacle = Twist()
+        robstacle = Twist()
+        cr = Twist()
+        left = Twist()
 
-      backwards.linear.x = -self.lin_speed
-      backwards.angular.z = 0
+        backwards.linear.x = -self.lin_speed
+        backwards.angular.z = 0
 
-      backwards.linear.x = -self.lin_speed
-      backwards.angular.z = 0
+        backwards.linear.x = -self.lin_speed
+        backwards.angular.z = 0
 
-      cr.linear.x = 0
-      cr.angular.z = self.rot_speed
+        cr.linear.x = 0
+        cr.angular.z = self.rot_speed
 
-      left.linear.x = 0
-      left.angular.z = self.neg_rot
+        left.linear.x = 0
+        left.angular.z = self.neg_rot
 
-      robstacle.linear.x = 0
-      robstacle.angular.z = radians(45)
+        robstacle.linear.x = 0
+        robstacle.angular.z = radians(45)
 
-      lobstacle.linear.x = 0
-      lobstacle.angular.z = (-radians(45))
+        lobstacle.linear.x = 0
+        lobstacle.angular.z = (-radians(45))
 
-      while not rospy.is_shutdown():
-          if (self.crbump | self.lbump):
-            rospy.sleep(1)
-            # wherever the object is = occupied
-            # populate_map(object_pos, 1)
-            for i in range (0, 3):
-              self.cmd_vel.publish(backwards)
-              self.rate.sleep()
-            rospy.sleep(1)
-            
-            if self.crbump:
-                    rospy.loginfo("CENTER RIGHT BUMP")
+        while not rospy.is_shutdown():
+            if (self.crbump | self.lbump):
+                rospy.sleep(1)
+                # wherever the object is = occupied
+                # populate_map(object_pos, 1)
+                for i in range (0, 3):
+                self.cmd_vel.publish(backwards)
+                self.rate.sleep()
+                rospy.sleep(1)
+                
+                if self.crbump:
+                        rospy.loginfo("CENTER RIGHT BUMP")
+                        for i in range(10):
+                            self.cmd_vel.publish(cr)
+                            self.rate.sleep()
+                        rospy.sleep(1) 
+                        self.crbump = False
+                if self.lbump:
+                    rospy.loginfo("LEFT BUMP")
                     for i in range(10):
-                        self.cmd_vel.publish(cr)
+                        self.cmd_vel.publish(left)
                         self.rate.sleep()
                     rospy.sleep(1) 
-                    self.crbump = False
-            if self.lbump:
-                rospy.loginfo("LEFT BUMP")
-                for i in range(10):
-                    self.cmd_vel.publish(left)
-                    self.rate.sleep()
-                rospy.sleep(1) 
-                self.lbump = False
+                    self.lbump = False
 
 
-          while(self.robstacle):
-            # wherever the object is = occupied
-            # populate_map(object_pos, 1)
-            rospy.loginfo("RIGHT OBSTACLE")
-            for i in range (0, 2):
-              self.cmd_vel.publish(robstacle)
-              self.rate.sleep()
-            rospy.sleep(.5)
-            self.robstacle = False
+            while(self.robstacle):
+                # wherever the object is = occupied
+                # populate_map(object_pos, 1)
+                rospy.loginfo("RIGHT OBSTACLE")
+                for i in range (0, 2):
+                self.cmd_vel.publish(robstacle)
+                self.rate.sleep()
+                rospy.sleep(.5)
+                self.robstacle = False
 
-          while(self.lobstacle):
-            rospy.loginfo("LEFT OBSTACLE")
-            # wherever the object is = occupied
-            # populate_map(object_pos, 1)
-            for i in range (0, 2):
-              self.cmd_vel.publish(lobstacle)
-              self.rate.sleep()
-            rospy.sleep(.5)
-            self.lobstacle = False
+            while(self.lobstacle):
+                rospy.loginfo("LEFT OBSTACLE")
+                # wherever the object is = occupied
+                # populate_map(object_pos, 1)
+                for i in range (0, 2):
+                self.cmd_vel.publish(lobstacle)
+                self.rate.sleep()
+                rospy.sleep(.5)
+                self.lobstacle = False
 
-          else:  
-            rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-                self.position[0], self.position[1], degrees(self.orientation)))
-            current_pos = (self.position[0], self.position[1])
-            # current_pos = free
-            # populate_map(current_pos, 0)
-            move_cmd.linear.x = self.lin_speed
-            move_cmd.angular.z = 0
-          
-          self.cmd_vel.publish(move_cmd)
-          self.rate.sleep()
+            else:  
+                rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
+                    self.position[0], self.position[1], degrees(self.orientation)))
+                current_pos = (self.position[0], self.position[1])
+                # current_pos = free
+                # populate_map(current_pos, 0)
+                move_cmd.linear.x = self.lin_speed
+                move_cmd.angular.z = 0
+            
+            self.cmd_vel.publish(move_cmd)
+            self.rate.sleep()
 
 
-"""  -while not paused:
-    -while no obstacle:
-      current_pos = free
-      populate map with current position being free
-      move forward
-    -if obstacle:
-      get position of obstacle (?from depth camera, coordinates of what it is avoiding)
-      mark that position as occupied in map
-      turn (in some direction, some amount)
-      {basic:
-        if still occupied, keep turning
-        don't update map with additional turns }
-      {start off basic, add later:
-        if still occupied, update map and keep turning }
-"""
+    """  -while not paused:
+        -while no obstacle:
+        current_pos = free
+        populate map with current position being free
+        move forward
+        -if obstacle:
+        get position of obstacle (?from depth camera, coordinates of what it is avoiding)
+        mark that position as occupied in map
+        turn (in some direction, some amount)
+        {basic:
+            if still occupied, keep turning
+            don't update map with additional turns }
+        {start off basic, add later:
+            if still occupied, update map and keep turning }
+    """
 
     def bound_object(self, img_in):
         """

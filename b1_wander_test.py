@@ -233,12 +233,12 @@ class B1_Wander_Test:
         return img
 
     def process_depth_image(self, data):
+        # Use bridge to convert to CV::Mat type. (i.e., convert image from ROS format to OpenCV format)
+        # NOTE: SOME DATA WILL BE 'NaN'
+        # and numbers correspond to distance to camera in meters
+        # This imports as the default data encoding. For the ASUS Xtion cameras,
+        # this is '32FC1' (single precision floating point [32F], single channel [C1])
         try:
-            # Use bridge to convert to CV::Mat type. (i.e., convert image from ROS format to OpenCV format)
-            # NOTE: SOME DATA WILL BE 'NaN'
-            # and numbers correspond to distance to camera in meters
-            # This imports as the default data encoding. For the ASUS Xtion cameras,
-            # this is '32FC1' (single precision floating point [32F], single channel [C1])
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
             # if you turn enough times, (maybe five times, make it turn randomly)

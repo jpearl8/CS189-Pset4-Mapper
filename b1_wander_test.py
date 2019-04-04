@@ -14,6 +14,44 @@ from kobuki_msgs.msg import BumperEvent, CliffEvent, WheelDropEvent
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
+def centroid(contour):
+    """
+    Compute the (x,y) centroid position of the counter
+    :param contour: OpenCV contour
+    :return: Tuple of (x,y) centroid position
+    """
+
+    def centroid_x(c):
+        """
+        Get centroid x position
+        :param c: OpenCV contour
+        :return: x position or -1
+        """
+        M = cv2.moments(c)
+        if M['m00'] == 0:
+            return -1
+        return int(M['m10'] / M['m00'])
+
+    def centroid_y(c):
+        """
+        Get centroid y position
+        :param c: OpenCV contour
+        :return: y position or -1
+        """
+        M = cv2.moments(c)
+        if M['m00'] == 0:
+            return -1
+        return int(M['m01'] / M['m00'])
+
+    return centroid_x(contour), centroid_y(contour)
+
+
+def dist(pos1, pos2):
+    """
+    Distance between the 2 (x,y) positions)
+    """
+    return math.sqrt((pos1[0] - pos2[0]) ** 2 +
+
 class B1_Wander_Test:
     def __init__(self):
       #INITIALIZER: 

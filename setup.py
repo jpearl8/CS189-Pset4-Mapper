@@ -3,15 +3,15 @@ import numpy as np
 import math
 import time
 
-# modules i dont have :(
-# from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Quaternion, PointStamped
-# import tf
-# from std_msgs.msg import Empty
-# import sys
-# import traceback
-# import rospy
-# from geometry_msgs.msg import Twist
-# from kobuki_msgs.msg import BumperEvent
+#modules i dont have :(
+from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Quaternion, PointStamped
+import tf
+from std_msgs.msg import Empty
+import sys
+import traceback
+import rospy
+from geometry_msgs.msg import Twist
+from kobuki_msgs.msg import BumperEvent
 
 
 class MapMaker:
@@ -35,46 +35,46 @@ class MapMaker:
         self.obstacle_pos = None
         self.obstacle = False
 
-    # --------- roscore stuff -- comment out as needed -------------------------
-        # # Initialize
-        # rospy.init_node('MapMaker', 'time', anonymous=False)
+    #--------- roscore stuff -- comment out as needed -------------------------
+        # Initialize
+        rospy.init_node('MapMaker', 'time', anonymous=False)
  
-        # # Subscribe to robot_pose_ekf for odometry/position information
-        # rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
+        # Subscribe to robot_pose_ekf for odometry/position information
+        rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
 
-        # # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
-        # reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
-        # # Reset odometry (these messages take about a second to get through)
-        # timer = rospy.Time.now()
-        # while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
-        #     reset_odom.publish(Empty())
+        # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
+        reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
+        # Reset odometry (these messages take about a second to get through)
+        timer = rospy.Time.now()
+        while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
+            reset_odom.publish(Empty())
 
-        # stuff for wandering - subscribing to velocity publisher
+        stuff for wandering - subscribing to velocity publisher
 
-        # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
-        #self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
+        Create a publisher which can "talk" to TurtleBot wheels and tell it to move
+        self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
 
-        # Tell user how to stop TurtleBot
-        #rospy.loginfo("To stop TurtleBot CTRL + C")
-        # What function to call when you ctrl + c    
-        #rospy.on_shutdown(self.shutdown)
+        Tell user how to stop TurtleBot
+        rospy.loginfo("To stop TurtleBot CTRL + C")
+        What function to call when you ctrl + c    
+        rospy.on_shutdown(self.shutdown)
 
-        # # 5 HZ
-        # self.rate = rospy.Rate(5)
+        # 5 HZ
+        self.rate = rospy.Rate(5)
 
-    # def process_EKF(self, data):
-    #     """
-    #     Process a message from the robot_pose_ekf and save position & orientation to the parameters
-    #     :param data: PoseWithCovarianceStamped from EKF
-    #     """
-    #     # Save the position
-    #     pos = data.pose.pose.position
-    #     self.position = (pos.x, pos.y)
+    def process_EKF(self, data):
+        """
+        Process a message from the robot_pose_ekf and save position & orientation to the parameters
+        :param data: PoseWithCovarianceStamped from EKF
+        """
+        # Save the position
+        pos = data.pose.pose.position
+        self.position = (pos.x, pos.y)
 
-    #     # Save the orientation 
-    #     orientation = data.pose.pose.orientation
-    #     list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
-    #     self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]
+        # Save the orientation 
+        orientation = data.pose.pose.orientation
+        list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
+        self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]
 
     def positionToMap(self, position):
         """
@@ -100,7 +100,7 @@ class MapMaker:
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         # show map for this amount of time 
-        time.sleep(0.5)
+        time.sleep(0.25)
 
         # next map update - zeroing out four corners of the map relative to current position -- not nessecary will change 
         start_pos = (0, 0)
@@ -112,7 +112,7 @@ class MapMaker:
         self.my_map[start_pos_map[0], start_pos_map[1]-1] = 0
         #print my_map
         self.mapObj.UpdateMapDisplay(self.my_map, start_pos)
-        time.sleep(0.5)
+        time.sleep(0.25)
 
       
     def updateMapFree(self):
@@ -121,12 +121,12 @@ class MapMaker:
         current_pos_map = self.positionToMap(current_pos)
 
         # check that current pos in the map is within the bounds
-        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
+        if (current_pos_map[0] <= 300 and current_pos_map[0] >= 0 and current_pos_map[1] <= 400 and current_pos_map[1] >= 0):
                 # if the current position is ok, set it to be free and update and show the map 
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
                 print "map updated"
-                time.sleep(3)
+                time.sleep(0.5)
                 
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
@@ -158,27 +158,27 @@ class MapMaker:
         # initialize map 
         self.initializeMap()
 
-        # initialize very basic wandering 
-        # move_cmd = Twist()
-        # move_cmd.linear.x = 0.5
-        # move_cmd.angular.z = 0
-        # rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-        #             self.position[0], self.position[1], math.degrees(self.orientation)))
+        initialize very basic wandering 
+        move_cmd = Twist()
+        move_cmd.linear.x = 0.5
+        move_cmd.angular.z = 0
+        rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
+                    self.position[0], self.position[1], math.degrees(self.orientation)))
 
-        # indent and uncomment for actual testing on robot 
+        #indent and uncomment for actual testing on robot 
 
-        #while not rospy.is_shutdown():
-            # if an obstacle is seen, this boolean should become true and map is updated accordingly 
+        while not rospy.is_shutdown():
+            #if an obstacle is seen, this boolean should become true and map is updated accordingly 
 
        
         if (self.obstacle == True):
             self.updateMapOccupied()
         # actually move  
-        #self.cmd_vel.publish(move_cmd)
+        self.cmd_vel.publish(move_cmd)
         # update the map with every movement 
         self.updateMapFree()
         # avoid jerkiness by sleeping with each interval
-        #self.rate.sleep()
+        self.rate.sleep()
 
 
 if __name__ == '__main__':

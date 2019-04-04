@@ -313,10 +313,10 @@ class B1_Wander_Test:
         # sleep just makes sure TurtleBot receives the stop command prior to shutting down the script
         rospy.sleep(5)
 
-    if __name__ == '__main__':
-        try:
-            robot = B1_Wander_Test()
-            robot.wander()
-        except Exception, err:
-            rospy.loginfo("DepthScan node terminated.")
-            print err
+if __name__ == '__main__':
+    try:
+        robot = B1_Wander_Test()
+        robot.wander()
+    except Exception, err:
+        rospy.loginfo("DepthScan node terminated.")
+        print err

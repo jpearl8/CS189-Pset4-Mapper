@@ -158,9 +158,9 @@ class B1_Wander_Test:
                 # populate_map(object_pos, 1)
                 rospy.loginfo("RIGHT OBSTACLE")
                 for i in range (0, 2):
-                self.cmd_vel.publish(robstacle)
-                self.rate.sleep()
-                rospy.sleep(.5)
+                    self.cmd_vel.publish(robstacle)
+                    self.rate.sleep()
+                    rospy.sleep(.5)
                 self.robstacle = False
 
             while(self.lobstacle):
@@ -168,9 +168,9 @@ class B1_Wander_Test:
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
                 for i in range (0, 2):
-                self.cmd_vel.publish(lobstacle)
-                self.rate.sleep()
-                rospy.sleep(.5)
+                    self.cmd_vel.publish(lobstacle)
+                    self.rate.sleep()
+                    rospy.sleep(.5)
                 self.lobstacle = False
 
             else:  

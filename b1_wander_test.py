@@ -14,92 +14,70 @@ from kobuki_msgs.msg import BumperEvent, CliffEvent, WheelDropEvent
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-def centroid(contour):
-    """
-    Compute the (x,y) centroid position of the counter
-    :param contour: OpenCV contour
-    :return: Tuple of (x,y) centroid position
-    """
 
-    def centroid_x(c):
-        """
-        Get centroid x position
-        :param c: OpenCV contour
-        :return: x position or -1
-        """
-        M = cv2.moments(c)
-        if M['m00'] == 0:
-            return -1
-        return int(M['m10'] / M['m00'])
-
-    def centroid_y(c):
-        """
-        Get centroid y position
-        :param c: OpenCV contour
-        :return: y position or -1
-        """
-        M = cv2.moments(c)
-        if M['m00'] == 0:
-            return -1
-        return int(M['m01'] / M['m00'])
-
-    return centroid_x(contour), centroid_y(contour)
-
-
-def dist(pos1, pos2):
-    """
-    Distance between the 2 (x,y) positions)
-    """
-    return math.sqrt((pos1[0] - pos2[0]) ** 2 +                      
-                     (pos1[1] - pos2[1]) ** 2)
 
 class B1_Wander_Test:
     def __init__(self):
-      #INITIALIZER: 
+        #INITIALIZER: 
         #TODO: needs all info about maps and such
 
-      # speed and radians for turns set here
-      self.lin_speed = 0.2  # m/s
-      self.rot_speed = radians(90)
-      self.neg_rot = -radians(90)
-      self.rec = {0, 0, 0, 0}
+        # speed and radians for turns set here
+        self.lin_speed = 0.2  # m/s
+        self.rot_speed = radians(90)
+        self.neg_rot = -radians(90)
+        self.rec = {0, 0, 0, 0}
 
-      self.crbump = False
-      self.lbump = False
+        self.crbump = False
+        self.lbump = False
 
-      self.lobstacle = False
-      self.robstacle = False
+        self.lobstacle = False
+        self.robstacle = False
 
-      self.paused = False
+        self.paused = False
+        self.position = None
+        self.orientation = None
 
-      # Initiliaze
-      rospy.init_node('Basic_Map', anonymous=False)
+        # Initiliaze
+        rospy.init_node('Basic_Map', anonymous=False)
 
-      # Tell user how to stop TurtleBot
-      rospy.loginfo("To stop TurtleBot CTRL + C")
-      # What function to call when you ctrl + c    
-      rospy.on_shutdown(self.shutdown)
+        # Tell user how to stop TurtleBot
+        rospy.loginfo("To stop TurtleBot CTRL + C")
+        # What function to call when you ctrl + c    
+        rospy.on_shutdown(self.shutdown)
 
-    
-      # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
-      self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
+        # Subscribe to robot_pose_ekf for odometry/position information
+        rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
+        # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
+        reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
+        # Reset odometry (these messages take about a second to get through)
+        timer = rospy.Time.now()
+        while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
+            reset_odom.publish(Empty())
+        
+        # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
+        self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
 
-      # Subscribe to queues for receiving sensory data
-      rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
+        # Subscribe to queues for receiving sensory data
+        rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
 
-      # Use a CvBridge to convert ROS image type to CV Image (Mat)
-      self.bridge = CvBridge()
-      # Subscribe to depth topic
-      rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
+        # Use a CvBridge to convert ROS image type to CV Image (Mat)
+        self.bridge = CvBridge()
+        # Subscribe to depth topic
+        rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
 
-      # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
-      self.rate = rospy.Rate(5)
+        # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
+        self.rate = rospy.Rate(5)
       
     def wander(self):
         """
         Run until Ctrl+C pressed
         :return: None
         """
+
+        # Initialize by starting first side
+        self.state = 'forward'
+        self.state_change_time = rospy.Time.now()
+        printed_position = False
 
         move_cmd = Twist()
         backwards = Twist()
@@ -201,6 +179,25 @@ class B1_Wander_Test:
         {start off basic, add later:
             if still occupied, update map and keep turning }
     """
+    def process_ekf(self, data):
+        """
+        Process a message from the robot_pose_ekf and save position & orientation to the parameters
+        :param data: PoseWithCovarianceStamped from EKF
+        """
+        # Extract the relevant covariances (uncertainties).
+        # Note that these are uncertainty on the robot VELOCITY, not position
+        cov = np.reshape(np.array(data.pose.covariance), (6, 6))
+        x_var = cov[0, 0]
+        y_var = cov[1, 1]
+        rot_var = cov[5, 5]
+        # You can print these or integrate over time to get the total uncertainty
+        
+        # Save the position and orientation
+        pos = data.pose.pose.position
+        self.position = (pos.x, pos.y)
+        orientation = data.pose.pose.orientation
+        list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
+        self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]
 
     def bound_object(self, img_in):
         """

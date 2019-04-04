@@ -133,8 +133,8 @@ class B1_Wander_Test:
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
                 for i in range (0, 3):
-                self.cmd_vel.publish(backwards)
-                self.rate.sleep()
+                    self.cmd_vel.publish(backwards)
+                    self.rate.sleep()
                 rospy.sleep(1)
                 
                 if self.crbump:

@@ -50,7 +50,8 @@ def dist(pos1, pos2):
     """
     Distance between the 2 (x,y) positions)
     """
-    return math.sqrt((pos1[0] - pos2[0]) ** 2 +
+    return math.sqrt((pos1[0] - pos2[0]) ** 2 +                      
+                     (pos1[1] - pos2[1]) ** 2)
 
 class B1_Wander_Test:
     def __init__(self):
@@ -61,6 +62,7 @@ class B1_Wander_Test:
       self.lin_speed = 0.2  # m/s
       self.rot_speed = radians(90)
       self.neg_rot = -radians(90)
+      self.rec = {0, 0, 0, 0}
 
       self.crbump = False
       self.lbump = False
@@ -142,13 +144,13 @@ def wander(self):
                         self.rate.sleep()
                     rospy.sleep(1) 
                     self.crbump = False
-                if self.lbump:
-                    rospy.loginfo("LEFT BUMP")
-                    for i in range(10):
-                        self.cmd_vel.publish(left)
-                        self.rate.sleep()
-                    rospy.sleep(1) 
-                    self.lbump = False
+            if self.lbump:
+                rospy.loginfo("LEFT BUMP")
+                for i in range(10):
+                    self.cmd_vel.publish(left)
+                    self.rate.sleep()
+                rospy.sleep(1) 
+                self.lbump = False
 
 
           while(self.robstacle):
@@ -226,6 +228,7 @@ def wander(self):
                     self.robstacle = True
 
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
+            self.rec = {x, x+w, y, y+h}
 
         return img
 
@@ -245,6 +248,17 @@ def wander(self):
             dst[:, 440:] = 0
 
             dst2 = self.bound_object(dst)
+
+            dst2 = dst[self.rec[0]:self.rec[1], self.rec[2]:self.rec[3]]
+            mean = 0
+            mean_test = 0
+            std = 0
+            #mean, std = cv2.meanStdDev(dst, mean, std, self.m_array)
+            mean_test = cv2.meanStdDev(dst2, mean_test, std)
+            #print "mean:"
+            #print mean
+            print "mean take 2"
+            print mean_test
 
 
             # Display the thresholded depth image

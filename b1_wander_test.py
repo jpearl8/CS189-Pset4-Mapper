@@ -228,7 +228,7 @@ def wander(self):
                     self.robstacle = True
 
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
-            self.rec = {x, x+w, y, y+h}
+
 
         return img
 
@@ -249,16 +249,7 @@ def wander(self):
 
             dst2 = self.bound_object(dst)
 
-            dst2 = dst[self.rec[0]:self.rec[1], self.rec[2]:self.rec[3]]
-            mean = 0
-            mean_test = 0
-            std = 0
-            #mean, std = cv2.meanStdDev(dst, mean, std, self.m_array)
-            mean_test = cv2.meanStdDev(dst2, mean_test, std)
-            #print "mean:"
-            #print mean
-            print "mean take 2"
-            print mean_test
+
 
 
             # Display the thresholded depth image

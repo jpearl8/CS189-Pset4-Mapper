@@ -45,14 +45,7 @@ class B1_Wander_Test:
         # What function to call when you ctrl + c    
         rospy.on_shutdown(self.shutdown)
 
-        # Subscribe to robot_pose_ekf for odometry/position information
-        rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
-        # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
-        reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
-        # Reset odometry (these messages take about a second to get through)
-        timer = rospy.Time.now()
-        while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
-            reset_odom.publish(Empty())
+
         
         # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
         self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
@@ -65,6 +58,16 @@ class B1_Wander_Test:
         # Subscribe to depth topic
         rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
 
+        # Subscribe to robot_pose_ekf for odometry/position information
+        rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
+        
+        # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
+        
+        reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
+        # Reset odometry (these messages take about a second to get through)
+        timer = rospy.Time.now()
+        while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
+            reset_odom.publish(Empty())
         # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
         self.rate = rospy.Rate(5)
       

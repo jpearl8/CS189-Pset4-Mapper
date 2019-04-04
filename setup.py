@@ -81,20 +81,22 @@ class MapMaker:
         turn EKF position in meters into map position in coordinates
         """
         # ratio of world meters to map coordinates 
-        world_map_ratio = 0.5
+        world_map_ratio = 0.2
 
-        # convert meters to map coorinates -- need to edit
-        x = int(position[0]/world_map_ratio)
-        y = int(position[1]/world_map_ratio)
+        # rang of meters for robot to travel in x and y direction (ie dimensions of that box), need to be condensed into 30, 40 map 
+        # position relative to 0,0 - so in steps? 
+        # convert meters to map coorinates -- need to edit -- commented out the right hand assertion 
+        step_x = int(position[0]/world_map_ratio)
+        step_y = int(position[1]/world_map_ratio)
         if (position[0] != 0 and position != 1):
-            x = x + 0
-            y = y + 0
+            step_x = step_x + 0
+            step_y = step_y + 0
         
-        return (x, y)
+        return (step_x , step_y)
 
     def initializeMap(self):
 
-        # first map update 
+        # first map update, need to do twice because it doesn't show up nicely the first time .p
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         # show map for this amount of time 
@@ -118,7 +120,7 @@ class MapMaker:
         current_pos = self.position
         current_pos_map = self.positionToMap(current_pos)
 
-        # check that current pos in the map is ok
+        # check that current pos in the map is within the bounds
         if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
                 # if the current position is ok, set it to be free and update and show the map 
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0

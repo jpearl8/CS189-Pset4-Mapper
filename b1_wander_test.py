@@ -19,7 +19,42 @@ from std_msgs.msg import Empty
 
 
 
+def dist(pos1, pos2):
+    """
+    Get cartesian distance between the (x, y) positions
+    :param pos1: (x, y) position 1
+    :param pos2: (x, y) position 2
+    :return: Distance (float)
+    """
+    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
+
+def orient(curr_pos, goal_pos):
+    """
+    Get necessary heading to reach the goal
+    :param curr_pos: (x, y) current position of the robot
+    :param goal_pos: (x, y) goal position to orient toward
+    """
+    return math.atan2(
+        goal_pos[1] - curr_pos[1],
+        goal_pos[0] - curr_pos[0])
+
+
+def angle_compare(curr_angle, goal_angle):
+    """
+    Determine the difference between the angles, normalized from -pi to +pi
+    :param curr_angle: current angle of the robot, in radians
+    :param goal_angle: goal orientation for the robot, in radians
+    """
+    pi2 = 2 * math.pi
+    # Normalize angle difference
+    angle_diff = (curr_angle - goal_angle) % pi2
+    # Force into range 0-2*pi
+    angle_diff = (angle_diff + pi2) % pi2
+    # Adjust to range of -pi to pi
+    if (angle_diff > math.pi):
+        angle_diff -= pi2
+    return angle_diff
 
 class B1_Wander_Test:
     def __init__(self):
@@ -63,11 +98,11 @@ class B1_Wander_Test:
         # Subscribe to depth topic
         rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
 
+        
         # Subscribe to robot_pose_ekf for odometry/position information
         rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
-        
+
         # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
-        
         reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
         # Reset odometry (these messages take about a second to get through)
         timer = rospy.Time.now()
@@ -164,7 +199,7 @@ class B1_Wander_Test:
                     move_cmd.linear.x = self.lin_speed
                     move_cmd.angular.z = 0
                 rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-                    self.position[0], self.position[1], degrees(self.orientation)))
+                    self.position[0], self.position[1], math.degrees(self.orientation)))
                 current_pos = (self.position[0], self.position[1])
                         
             # publish the velocity

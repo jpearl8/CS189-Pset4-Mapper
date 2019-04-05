@@ -136,7 +136,7 @@ class B1_Wander_Test:
         turn EKF position in meters into map position in coordinates
         """
         # ratio of world meters to map coordinates 
-        world_map_ratio = .2
+        world_map_ratio = 0.9
 
         # rang of meters for robot to travel in x and y direction (ie dimensions of that box), need to be condensed into 30, 40 map 
         # position relative to 0,0 - so in steps? 
@@ -144,26 +144,26 @@ class B1_Wander_Test:
         step_x = int(position[0]/world_map_ratio)
         step_y = int(position[1]/world_map_ratio)
         
-        return (step_x , step_y)
+        return (step_x, step_y + 15)
 
     def initializeMap(self):
         # first map update, need to do twice because it doesn't show up nicely the first time .p
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         # show map for this amount of time 
-        time.sleep(0.25)
+        time.sleep(0.001)
 
         # next map update - zeroing out four corners of the map relative to current position -- not nessecary will change 
-        start_pos = (0, 0)
-        start_pos_map = self.positionToMap(start_pos)
-        print start_pos_map
-        self.my_map[start_pos_map[0], start_pos_map[1]] = 0
-        self.my_map[start_pos_map[0]-1, start_pos_map[1]] = 0
-        self.my_map[start_pos_map[0]-1, start_pos_map[1]-1] = 0
-        self.my_map[start_pos_map[0], start_pos_map[1]-1] = 0
-        #print my_map
-        self.mapObj.UpdateMapDisplay(self.my_map, start_pos)
-        time.sleep(0.25)
+        #start_pos = (0, 0)
+        #start_pos_map = self.positionToMap(start_pos)
+        # print start_pos_map
+        # self.my_map[start_pos_map[0], start_pos_map[1]] = 0
+        # self.my_map[start_pos_map[0]-1, start_pos_map[1]] = 0
+        # self.my_map[start_pos_map[0]-1, start_pos_map[1]-1] = 0
+        # self.my_map[start_pos_map[0], start_pos_map[1]-1] = 0
+        # #print my_map
+        # self.mapObj.UpdateMapDisplay(self.my_map, start_pos)
+        #time.sleep(0.0001)
 
     def updateMapFree(self):
         # update map with current position and knowlege that this position is free
@@ -175,8 +175,8 @@ class B1_Wander_Test:
                 # if the current position is ok, set it to be free and update and show the map 
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                print "map updated"
-                time.sleep(0.5)            
+                print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+                time.sleep(0.001)            
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
@@ -202,7 +202,7 @@ class B1_Wander_Test:
         Run until Ctrl+C pressed
         :return: None
         """
-
+        #self.initializeMap()
         # Initialize by starting first side
         self.state = 'forward'
         self.state_change_time = rospy.Time.now()
@@ -290,11 +290,10 @@ class B1_Wander_Test:
                 self.lobstacle = False
 
             else:
-                # self.updateMapFree()
+                self.updateMapFree()
                 rospy.loginfo("HERE")
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
-                self.cmd_vel.publish(move_cmd)
                 rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
                    self.position[0], self.position[1], math.degrees(self.orientation)))
      
@@ -400,8 +399,8 @@ class B1_Wander_Test:
             cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
 
             # Displays thresholded depth image   
-            cv2.imshow('Depth Image', np.hstack((dst, dst2)))    
-            cv2.waitKey(3)
+            #cv2.imshow('Depth Image', np.hstack((dst, dst2)))    
+            #cv2.waitKey(3)
         except CvBridgeError, err:
             rospy.loginfo(err)
 

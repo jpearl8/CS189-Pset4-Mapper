@@ -279,6 +279,11 @@ class C2_Wander_Test:
                 rospy.loginfo("LEFT OBSTACLE")
                 self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
                 self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
+                rospy.log("obstacle x")
+                rospy.log(self.obstacle_pos[0])
+                rospy.log("obstacle y")
+                rospy.log(self.obstacle_pos[1])
+                
                 #self.updateMapOccupied()
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
@@ -364,7 +369,7 @@ class C2_Wander_Test:
             # Differentiate between left and right objects
             x, y, w, h = cv2.boundingRect(max_contour)
             if (w*h > 200):
-                if (x < 220):
+                if (x < 160):
                     self.lobstacle = True
                 else:
                     self.robstacle = True

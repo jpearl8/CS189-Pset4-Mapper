@@ -73,12 +73,12 @@ class C2_Wander_Test:
 
         # Localization determined from EKF
         # Position is a geometry_msgs/Point object with (x,y,z) fields
-        self.position = (3, 3) # just for testing purposes, reset to None later 
+        self.position = [3, 3] # just for testing purposes, reset to None later 
         # Orientation is the rotation in the floor plane from initial pose
-        self.orientation = None
+        self.orientation = 0.0
 
         # handle obstacles
-        self.obstacle_pos = None
+        self.obstacle_pos = [0., 0.]
         self.obstacle = False
 
         # speed and radians for turns set here
@@ -183,20 +183,26 @@ class C2_Wander_Test:
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
-        obstacle_pos = self.obstacle_pos
-        obstacle_pos_map = self.positionToMap(obstacle_pos)
+        print "AA"
+        print self.obstacle_pos
+        if (math.isnan(self.obstacle_pos[0]) or math.isnan(self.obstacle_pos[1])):
+        	print "BB"
+        	obstacle_pos = self.obstacle_pos
+	        obstacle_pos_map = self.positionToMap(obstacle_pos)
+	        current_pos = self.position
+	        current_pos_map = self.positionToMap(current_pos)
 
-        # check that obstacle pos in the map is ok
-        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
-                # if the obstacle position is ok, set it to be occupied
-                self.my_map[current_pos_map[0], obstacle_pos_map[1]] = 1
-                # show the map, but still relative to current position 
-                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                time.sleep(3)
-        else:
-            # if the current position is not ok, let it be known that the values are off, do not change the map array
-            print "values are off! obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
-      
+	        # check that obstacle pos in the map is ok
+	        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
+	                # if the obstacle position is ok, set it to be occupied
+	                self.my_map[current_pos_map[0], obstacle_pos_map[1]] = 1
+	                # show the map, but still relative to current position 
+	                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
+	                time.sleep(3)
+	        else:
+	            # if the current position is not ok, let it be known that the values are off, do not change the map array
+	            print "values are off! obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
+	      
     def wander(self):
         """
         Run until Ctrl+C pressed
@@ -236,7 +242,7 @@ class C2_Wander_Test:
         while not rospy.is_shutdown():
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
-                self.obstacle = self.position
+                self.obstacle_pos = self.position
                 self.updateMapOccupied()
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
@@ -265,8 +271,16 @@ class C2_Wander_Test:
             while(self.robstacle):
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
-                self.obstacle_pos[0] = self.position[0] + .3*np.arcsin(self.orientation)
-                self.obstacle_pos[1] = self.position[1] + .3*np.arccos(self.orientation)
+                # print "tt"
+                # print self.position[0]
+                # print int(self.orientation)
+                
+                print self.obstacle_pos[0]
+                if (not(math.isnan(self.orientation))):
+                	self.obstacle_pos[0] = float(self.position[0]) + .3*np.arcsin(float(self.orientation))
+                	self.obstacle_pos[1] = float(self.position[1]) + .3*np.arccos(float(self.orientation))
+                	if (not(math.isnan(self.obstacle_pos))):
+                		self.updateMapOccupied()
                 #self.updateMapOccupied()
                 rospy.loginfo("RIGHT OBSTACLE")
                 for i in range (0, 2):
@@ -277,12 +291,13 @@ class C2_Wander_Test:
 
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
-                self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
-                self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
-                rospy.log("obstacle x")
-                rospy.log(self.obstacle_pos[0])
-                rospy.log("obstacle y")
-                rospy.log(self.obstacle_pos[1])
+                if (not(math.isnan(self.orientation))):
+                	self.obstacle_pos[0] = float(self.position[0]) + .3*np.arcsin(float(self.orientation))
+                	self.obstacle_pos[1] = float(self.position[1]) + .3*np.arccos(float(self.orientation))
+                	print self.obstacle_pos
+                	if (not(math.isnan(self.obstacle_pos))):
+                		self.updateMapOccupied()
+
                 
                 #self.updateMapOccupied()
                 # wherever the object is = occupied
@@ -389,7 +404,7 @@ class C2_Wander_Test:
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
             # if you turn enough times, (maybe five times, make it turn randomly)
-            dst	= cv2.inRange(cv_image, 0.1, 0.5)	
+            dst	= cv2.inRange(cv_image, 0.1, 0.6)	
             dst[400:, :] = 0
             dst[:, 0:200] = 0
             dst[:, 440:] = 0

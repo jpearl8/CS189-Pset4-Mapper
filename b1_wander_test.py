@@ -6,6 +6,7 @@ Makes basic map
 
 import rospy
 import random
+import math
 from math import radians, degrees
 import cv2
 import numpy as np
@@ -88,7 +89,7 @@ class B1_Wander_Test:
 
         
         # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
-        self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
+        self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi',Twist, queue_size=10)
 
         # Subscribe to queues for receiving sensory data
         rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
@@ -130,8 +131,7 @@ class B1_Wander_Test:
         cr = Twist()
         left = Twist()
 
-        backwards.linear.x = -self.lin_speed
-        backwards.angular.z = 0
+
 
         backwards.linear.x = -self.lin_speed
         backwards.angular.z = 0
@@ -149,58 +149,59 @@ class B1_Wander_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            if (self.crbump | self.lbump):
-                rospy.sleep(1)
-                # wherever the object is = occupied
-                # populate_map(object_pos, 1)
-                for i in range (0, 3):
-                    self.cmd_vel.publish(backwards)
-                    self.rate.sleep()
-                rospy.sleep(1)
+            # if (self.crbump | self.lbump):
+            #     rospy.sleep(1)
+            #     # wherever the object is = occupied
+            #     # populate_map(object_pos, 1)
+            #     for i in range (0, 3):
+            #         self.cmd_vel.publish(backwards)
+            #         self.rate.sleep()
+            #     rospy.sleep(1)
                 
-                if self.crbump:
-                        rospy.loginfo("CENTER RIGHT BUMP")
-                        for i in range(10):
-                            self.cmd_vel.publish(cr)
-                            self.rate.sleep()
-                        rospy.sleep(1) 
-                        self.crbump = False
-                if self.lbump:
-                    rospy.loginfo("LEFT BUMP")
-                    for i in range(10):
-                        self.cmd_vel.publish(left)
-                        self.rate.sleep()
-                    rospy.sleep(1) 
-                    self.lbump = False
+            #     if self.crbump:
+            #             rospy.loginfo("CENTER RIGHT BUMP")
+            #             for i in range(10):
+            #                 self.cmd_vel.publish(cr)
+            #                 self.rate.sleep()
+            #             rospy.sleep(1) 
+            #             self.crbump = False
+            #     if self.lbump:
+            #         rospy.loginfo("LEFT BUMP")
+            #         for i in range(10):
+            #             self.cmd_vel.publish(left)
+            #             self.rate.sleep()
+            #         rospy.sleep(1) 
+            #         self.lbump = False
 
 
-            while(self.robstacle):
-                # wherever the object is = occupied
-                # populate_map(object_pos, 1)
-                rospy.loginfo("RIGHT OBSTACLE")
-                for i in range (0, 2):
-                    self.cmd_vel.publish(robstacle)
-                    self.rate.sleep()
-                    rospy.sleep(.5)
-                self.robstacle = False
+            # while(self.robstacle):
+            #     # wherever the object is = occupied
+            #     # populate_map(object_pos, 1)
+            #     rospy.loginfo("RIGHT OBSTACLE")
+            #     for i in range (0, 2):
+            #         self.cmd_vel.publish(robstacle)
+            #         self.rate.sleep()
+            #         rospy.sleep(.5)
+            #     self.robstacle = False
 
-            while(self.lobstacle):
-                rospy.loginfo("LEFT OBSTACLE")
-                # wherever the object is = occupied
-                # populate_map(object_pos, 1)
-                for i in range (0, 2):
-                    self.cmd_vel.publish(lobstacle)
-                    self.rate.sleep()
-                    rospy.sleep(.5)
-                self.lobstacle = False
+            # while(self.lobstacle):
+            #     rospy.loginfo("LEFT OBSTACLE")
+            #     # wherever the object is = occupied
+            #     # populate_map(object_pos, 1)
+            #     for i in range (0, 2):
+            #         self.cmd_vel.publish(lobstacle)
+            #         self.rate.sleep()
+            #         rospy.sleep(.5)
+            #     self.lobstacle = False
 
-            else:
-                for i in range(0, 3):
-                    move_cmd.linear.x = self.lin_speed
-                    move_cmd.angular.z = 0
-                rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-                    self.position[0], self.position[1], math.degrees(self.orientation)))
-                current_pos = (self.position[0], self.position[1])
+            # else:
+
+            rospy.loginfo("HERE")
+            move_cmd.linear.x = self.lin_speed
+            move_cmd.angular.z = 0
+            rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
+                self.position[0], self.position[1], math.degrees(self.orientation)))
+            current_pos = (self.position[0], self.position[1])
                         
             # publish the velocity
             self.cmd_vel.publish(move_cmd)

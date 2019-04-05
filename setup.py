@@ -52,7 +52,7 @@ class MapMaker:
         #stuff for wandering - subscribing to velocity publisher
 
         #Create a publisher which can "talk" to TurtleBot wheels and tell it to move
-        self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
+        self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi',Twist, queue_size=10)
 
         #Tell user how to stop TurtleBot
         rospy.loginfo("To stop TurtleBot CTRL + C")
@@ -181,18 +181,18 @@ class MapMaker:
         #indent and uncomment for actual testing on robot 
 
         while not rospy.is_shutdown():
+            now = rospy.Time.now()
+            for i in range(0, 3):
+                self.cmd_vel.publish(move_cmd)
+                self.rate.sleep()
+                rospy.sleep(0.5)
+                print i
             #if an obstacle is seen, this boolean should become true and map is updated accordingly
 	        #if (self.obstacle == True):
 	            #self.updateMapOccupied()
 
-	        
-
 	        # actually move  
-	        for i in range(0, 3):
-	        	self.cmd_vel.publish(move_cmd)
-	        	self.rate.sleep()
-	        	rospy.sleep(0.5)
-	        	print i
+	      
 	        # avoid jerkiness by sleeping with each interval
 	        
 	        # update the map with every movement 

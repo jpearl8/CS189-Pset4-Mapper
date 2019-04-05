@@ -61,7 +61,7 @@ def angle_compare(curr_angle, goal_angle):
         angle_diff -= pi2
     return angle_diff
 
-class C@_Wander_Test:
+class C2_Wander_Test:
     def __init__(self):
         #INITIALIZER: 
         # initializer for the maps 
@@ -265,9 +265,9 @@ class C@_Wander_Test:
             while(self.robstacle):
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
-                self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
-                self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
-                self.updateMapOccupied()
+                self.obstacle_pos[0] = self.position[0] + .3*np.arcsin(self.orientation)
+                self.obstacle_pos[1] = self.position[1] + .3*np.arccos(self.orientation)
+                #self.updateMapOccupied()
                 rospy.loginfo("RIGHT OBSTACLE")
                 for i in range (0, 2):
                     self.cmd_vel.publish(robstacle)

@@ -236,6 +236,8 @@ class B1_Wander_Test:
         while not rospy.is_shutdown():
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
+                self.obstacle = self.position
+                self.updateMapOccupied()
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
                 for i in range (0, 3):
@@ -244,6 +246,7 @@ class B1_Wander_Test:
                 rospy.sleep(1)
                 
                 if self.crbump:
+                    
                         rospy.loginfo("CENTER RIGHT BUMP")
                         for i in range(10):
                             self.cmd_vel.publish(cr)
@@ -262,6 +265,9 @@ class B1_Wander_Test:
             while(self.robstacle):
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
+                self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
+                self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
+                self.updateMapOccupied()
                 rospy.loginfo("RIGHT OBSTACLE")
                 for i in range (0, 2):
                     self.cmd_vel.publish(robstacle)
@@ -271,9 +277,12 @@ class B1_Wander_Test:
 
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
+                self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
+                self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
+                #self.updateMapOccupied()
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
-                #self.updateMapOccupied()
+                
                 for i in range (0, 2):
                     self.cmd_vel.publish(lobstacle)
                     self.rate.sleep()

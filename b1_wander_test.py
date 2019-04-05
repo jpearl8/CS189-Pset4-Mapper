@@ -6,7 +6,7 @@ Makes basic map
 
 import rospy
 import random
-from math import radians
+from math import radians, degrees
 import cv2
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -15,6 +15,9 @@ from kobuki_msgs.msg import BumperEvent, CliffEvent, WheelDropEvent
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Quaternion, PointStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+from std_msgs.msg import Empty
+
+
 
 
 
@@ -156,14 +159,16 @@ class B1_Wander_Test:
                     rospy.sleep(.5)
                 self.lobstacle = False
 
-            else:  
+            else:
+                for i in range(0, 3):
+                    move_cmd.linear.x = self.lin_speed
+                    move_cmd.angular.z = 0
                 rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
                     self.position[0], self.position[1], degrees(self.orientation)))
                 current_pos = (self.position[0], self.position[1])
                 # current_pos = free
                 # populate_map(current_pos, 0)
-                move_cmd.linear.x = self.lin_speed
-                move_cmd.angular.z = 0
+
             
             self.cmd_vel.publish(move_cmd)
             self.rate.sleep()

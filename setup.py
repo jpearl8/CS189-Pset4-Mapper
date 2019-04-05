@@ -49,14 +49,14 @@ class MapMaker:
         while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
             reset_odom.publish(Empty())
 
-        stuff for wandering - subscribing to velocity publisher
+        #stuff for wandering - subscribing to velocity publisher
 
-        Create a publisher which can "talk" to TurtleBot wheels and tell it to move
+        #Create a publisher which can "talk" to TurtleBot wheels and tell it to move
         self.cmd_vel = rospy.Publisher('wanderer_velocity_smoother/raw_cmd_vel',Twist, queue_size=10)
 
-        Tell user how to stop TurtleBot
+        #Tell user how to stop TurtleBot
         rospy.loginfo("To stop TurtleBot CTRL + C")
-        What function to call when you ctrl + c    
+        #What function to call when you ctrl + c    
         rospy.on_shutdown(self.shutdown)
 
         # 5 HZ
@@ -158,7 +158,7 @@ class MapMaker:
         # initialize map 
         self.initializeMap()
 
-        initialize very basic wandering 
+        #initialize very basic wandering 
         move_cmd = Twist()
         move_cmd.linear.x = 0.5
         move_cmd.angular.z = 0
@@ -168,17 +168,15 @@ class MapMaker:
         #indent and uncomment for actual testing on robot 
 
         while not rospy.is_shutdown():
-            #if an obstacle is seen, this boolean should become true and map is updated accordingly 
-
-       
-        if (self.obstacle == True):
-            self.updateMapOccupied()
-        # actually move  
-        self.cmd_vel.publish(move_cmd)
-        # update the map with every movement 
-        self.updateMapFree()
-        # avoid jerkiness by sleeping with each interval
-        self.rate.sleep()
+            #if an obstacle is seen, this boolean should become true and map is updated accordingly
+	        if (self.obstacle == True):
+	            self.updateMapOccupied()
+	        # actually move  
+	        self.cmd_vel.publish(move_cmd)
+	        # update the map with every movement 
+	        self.updateMapFree()
+	        # avoid jerkiness by sleeping with each interval
+	        self.rate.sleep()
 
 
 if __name__ == '__main__':

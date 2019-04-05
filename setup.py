@@ -62,7 +62,7 @@ class MapMaker:
         # 5 HZ
         self.rate = rospy.Rate(5)
 
-    def process_EKF(self, data):
+    def process_ekf(self, data):
         """
         Process a message from the robot_pose_ekf and save position & orientation to the parameters
         :param data: PoseWithCovarianceStamped from EKF
@@ -126,8 +126,7 @@ class MapMaker:
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
                 print "map updated"
-                time.sleep(0.5)
-                
+                time.sleep(0.5)            
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
@@ -148,6 +147,19 @@ class MapMaker:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "values are off! obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
+    def shutdown(self):
+        """
+        Pre-shutdown routine. Stops the robot before rospy.shutdown 
+        :return: None
+        """
+        # stop turtlebot
+        rospy.loginfo("Stop Drawing Squares!")
+        # publish a zeroed out Twist object
+        self.cmd_vel.publish(Twist())
+        # sleep before final shutdown
+        rospy.sleep(2)
+
+
 
     def run(self):
         """
@@ -157,26 +169,35 @@ class MapMaker:
         """
         # initialize map 
         self.initializeMap()
-
         #initialize very basic wandering 
         move_cmd = Twist()
-        move_cmd.linear.x = 0.5
-        move_cmd.angular.z = 0
-        rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-                    self.position[0], self.position[1], math.degrees(self.orientation)))
+        move_cmd.linear.x = 2
+        move_cmd.angular.z = 0.3
+
+        
+        rospy.loginfo('%d, %d'.format(
+                    self.position[0], self.position[1]))
 
         #indent and uncomment for actual testing on robot 
 
         while not rospy.is_shutdown():
             #if an obstacle is seen, this boolean should become true and map is updated accordingly
-	        if (self.obstacle == True):
-	            self.updateMapOccupied()
+	        #if (self.obstacle == True):
+	            #self.updateMapOccupied()
+
+	        
+
 	        # actually move  
-	        self.cmd_vel.publish(move_cmd)
+	        for i in range(0, 3):
+	        	self.cmd_vel.publish(move_cmd)
+	        	self.rate.sleep()
+	        	rospy.sleep(0.5)
+	        	print i
+	        # avoid jerkiness by sleeping with each interval
+	        
 	        # update the map with every movement 
 	        self.updateMapFree()
-	        # avoid jerkiness by sleeping with each interval
-	        self.rate.sleep()
+	        
 
 
 if __name__ == '__main__':

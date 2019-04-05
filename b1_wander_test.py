@@ -166,11 +166,11 @@ class B1_Wander_Test:
                 rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
                     self.position[0], self.position[1], degrees(self.orientation)))
                 current_pos = (self.position[0], self.position[1])
+                        
+            # publish the velocity
+            self.cmd_vel.publish(move_cmd)
                 # current_pos = free
                 # populate_map(current_pos, 0)
-
-            
-            self.cmd_vel.publish(move_cmd)
             self.rate.sleep()
 
 

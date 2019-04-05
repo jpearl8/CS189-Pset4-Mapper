@@ -22,10 +22,10 @@ class MapDrawer:
         coordinates. `positionToMap` must define a right-handed coordinate
         system.
         """
-        self.map_size = (30,40)
+        self.map_size = (40,30)
         self.draw_scale = 16
         self.map = -np.ones(self.map_size).astype(int)
-        self.drawn_map = np.zeros((480,640,3))
+        self.drawn_map = np.zeros((640,480,3))
         self.map_colors = [[0, 0, 0], [1, 1, 1], [1, 0, 0]]
         self.positionToMap = positionToMap
 

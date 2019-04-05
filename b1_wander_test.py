@@ -136,16 +136,13 @@ class B1_Wander_Test:
         turn EKF position in meters into map position in coordinates
         """
         # ratio of world meters to map coordinates 
-        world_map_ratio = 0.2
+        world_map_ratio = .2
 
         # rang of meters for robot to travel in x and y direction (ie dimensions of that box), need to be condensed into 30, 40 map 
         # position relative to 0,0 - so in steps? 
         # convert meters to map coorinates -- need to edit -- commented out the right hand assertion 
         step_x = int(position[0]/world_map_ratio)
         step_y = int(position[1]/world_map_ratio)
-        if (position[0] != 0 and position != 1):
-            step_x = step_x + 0
-            step_y = step_y + 0
         
         return (step_x , step_y)
 
@@ -237,64 +234,64 @@ class B1_Wander_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            # if (self.crbump | self.lbump):
-            #     rospy.sleep(1)
-            #     # wherever the object is = occupied
-            #     # populate_map(object_pos, 1)
-            #     for i in range (0, 3):
-            #         self.cmd_vel.publish(backwards)
-            #         self.rate.sleep()
-            #     rospy.sleep(1)
+            if (self.crbump | self.lbump):
+                rospy.sleep(1)
+                # wherever the object is = occupied
+                # populate_map(object_pos, 1)
+                for i in range (0, 3):
+                    self.cmd_vel.publish(backwards)
+                    self.rate.sleep()
+                rospy.sleep(1)
                 
-            #     if self.crbump:
-            #             rospy.loginfo("CENTER RIGHT BUMP")
-            #             for i in range(10):
-            #                 self.cmd_vel.publish(cr)
-            #                 self.rate.sleep()
-            #             rospy.sleep(1) 
-            #             self.crbump = False
-            #     if self.lbump:
-            #         rospy.loginfo("LEFT BUMP")
-            #         for i in range(10):
-            #             self.cmd_vel.publish(left)
-            #             self.rate.sleep()
-            #         rospy.sleep(1) 
-            #         self.lbump = False
+                if self.crbump:
+                        rospy.loginfo("CENTER RIGHT BUMP")
+                        for i in range(10):
+                            self.cmd_vel.publish(cr)
+                            self.rate.sleep()
+                        rospy.sleep(1) 
+                        self.crbump = False
+                if self.lbump:
+                    rospy.loginfo("LEFT BUMP")
+                    for i in range(10):
+                        self.cmd_vel.publish(left)
+                        self.rate.sleep()
+                    rospy.sleep(1) 
+                    self.lbump = False
 
 
-            # while(self.robstacle):
-            #     # wherever the object is = occupied
-            #     # populate_map(object_pos, 1)
-            #     rospy.loginfo("RIGHT OBSTACLE")
-            #     for i in range (0, 2):
-            #         self.cmd_vel.publish(robstacle)
-            #         self.rate.sleep()
-            #         rospy.sleep(.5)
-            #     self.robstacle = False
+            while(self.robstacle):
+                # wherever the object is = occupied
+                # populate_map(object_pos, 1)
+                rospy.loginfo("RIGHT OBSTACLE")
+                for i in range (0, 2):
+                    self.cmd_vel.publish(robstacle)
+                    self.rate.sleep()
+                    rospy.sleep(.5)
+                self.robstacle = False
 
-            # while(self.lobstacle):
-            #     rospy.loginfo("LEFT OBSTACLE")
-            #     # wherever the object is = occupied
-            #     # populate_map(object_pos, 1)
-            #     for i in range (0, 2):
-            #         self.cmd_vel.publish(lobstacle)
-            #         self.rate.sleep()
-            #         rospy.sleep(.5)
-            #     self.lobstacle = False
+            while(self.lobstacle):
+                rospy.loginfo("LEFT OBSTACLE")
+                # wherever the object is = occupied
+                # populate_map(object_pos, 1)
+                #self.updateMapOccupied()
+                for i in range (0, 2):
+                    self.cmd_vel.publish(lobstacle)
+                    self.rate.sleep()
+                    rospy.sleep(.5)
+                self.lobstacle = False
 
-            # else:
+            else:
+                # self.updateMapFree()
+                rospy.loginfo("HERE")
+                move_cmd.linear.x = self.lin_speed
+                move_cmd.angular.z = 0
+                self.cmd_vel.publish(move_cmd)
+                rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
+                   self.position[0], self.position[1], math.degrees(self.orientation)))
+     
+                #current_pos = (self.position[0], self.position[1])
+               
 
-            rospy.loginfo("HERE")
-            move_cmd.linear.x = self.lin_speed
-            move_cmd.angular.z = 0
-            # rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-            #     self.position[0], self.position[1], math.degrees(self.orientation)))
-
-            rospy.loginfo('%d, %d'.format(
-                    self.position[0], self.position[1]))
-            current_pos = (self.position[0], self.position[1])
-
-            self.updateMapFree()
                         
             # publish the velocity
             self.cmd_vel.publish(move_cmd)
@@ -378,7 +375,7 @@ class B1_Wander_Test:
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
             # if you turn enough times, (maybe five times, make it turn randomly)
-            dst	= cv2.inRange(cv_image, 0.1, .7)	
+            dst	= cv2.inRange(cv_image, 0.1, 0.5)	
             dst[400:, :] = 0
             dst[:, 0:200] = 0
             dst[:, 440:] = 0

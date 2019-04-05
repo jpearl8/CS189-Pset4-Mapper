@@ -69,7 +69,7 @@ class B1_Wander_Test:
         self.mapObj = mp.MapDrawer(self.positionToMap)
 
         # create blank array of negative ones to represent blank map 
-        self.my_map = -np.ones((30,40))
+        self.my_map = -np.ones((40,30))
 
         # Localization determined from EKF
         # Position is a geometry_msgs/Point object with (x,y,z) fields
@@ -78,7 +78,7 @@ class B1_Wander_Test:
         self.orientation = None
 
         # handle obstacles
-        self.obstacle_pos = None
+        self.obstacle_pos = [0,0]
         self.obstacle = False
 
         # speed and radians for turns set here
@@ -136,38 +136,26 @@ class B1_Wander_Test:
         turn EKF position in meters into map position in coordinates
         """
         # ratio of world meters to map coordinates 
-        world_map_ratio = 0.9
+        world_map_ratio = 0.15
 
-        # rang of meters for robot to travel in x and y direction (ie dimensions of that box), need to be condensed into 30, 40 map 
-        # position relative to 0,0 - so in steps? 
-        # convert meters to map coorinates -- need to edit -- commented out the right hand assertion 
         step_x = int(position[0]/world_map_ratio)
         step_y = int(position[1]/world_map_ratio)
         
-        return (step_x, step_y + 15)
+        return (step_x + 2, step_y + 15)
 
     def initializeMap(self):
         # first map update, need to do twice because it doesn't show up nicely the first time .p
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
+      
         # show map for this amount of time 
         time.sleep(0.001)
-
-        # next map update - zeroing out four corners of the map relative to current position -- not nessecary will change 
-        #start_pos = (0, 0)
-        #start_pos_map = self.positionToMap(start_pos)
-        # print start_pos_map
-        # self.my_map[start_pos_map[0], start_pos_map[1]] = 0
-        # self.my_map[start_pos_map[0]-1, start_pos_map[1]] = 0
-        # self.my_map[start_pos_map[0]-1, start_pos_map[1]-1] = 0
-        # self.my_map[start_pos_map[0], start_pos_map[1]-1] = 0
-        # #print my_map
-        # self.mapObj.UpdateMapDisplay(self.my_map, start_pos)
-        #time.sleep(0.0001)
 
     def updateMapFree(self):
         # update map with current position and knowlege that this position is free
         current_pos = self.position
+        current_orr = self.orientation
+        print "2"
         current_pos_map = self.positionToMap(current_pos)
 
         # check that current pos in the map is within the bounds
@@ -176,15 +164,22 @@ class B1_Wander_Test:
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
                 print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
-                time.sleep(0.001)            
+                time.sleep(0.0000001)            
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
+        current_pos = self.position
+        current_orr = self.orientation
+
         obstacle_pos = self.obstacle_pos
+        obstacle_orr = self.orientation
+
+        current_pos_map = self.positionToMap(current_pos)
         obstacle_pos_map = self.positionToMap(obstacle_pos)
+        print "OBSTACLE MAP POS: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
         # check that obstacle pos in the map is ok
         if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
@@ -192,10 +187,10 @@ class B1_Wander_Test:
                 self.my_map[current_pos_map[0], obstacle_pos_map[1]] = 1
                 # show the map, but still relative to current position 
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                time.sleep(3)
+                time.sleep(0.00000001)
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
-            print "values are off! obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
+            print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
       
     def wander(self):
         """
@@ -236,7 +231,10 @@ class B1_Wander_Test:
         while not rospy.is_shutdown():
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
-                self.obstacle = self.position
+                self.obstacle = True
+                self.obstacle_pos[0] = self.position[0] + 3
+                self.obstacle_pos[1] = self.position[1] + 3
+                rospy.loginfo("RIGHT BUMP")
                 self.updateMapOccupied()
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
@@ -265,10 +263,12 @@ class B1_Wander_Test:
             while(self.robstacle):
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
-                self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
-                self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
-                self.updateMapOccupied()
+                self.obstacle = True
+                self.obstacle_pos[0] = self.position[0] - 3
+                self.obstacle_pos[1] = self.position[1] - 3
                 rospy.loginfo("RIGHT OBSTACLE")
+                self.updateMapOccupied()
+                
                 for i in range (0, 2):
                     self.cmd_vel.publish(robstacle)
                     self.rate.sleep()
@@ -277,8 +277,8 @@ class B1_Wander_Test:
 
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
-                self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
-                self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
+                # self.obstacle_pos[0] = self.position[0] + .3*sin(self.orientation)
+                # self.obstacle_pos[1] = self.position[1] + .3*cos(self.orientation)
                 #self.updateMapOccupied()
                 # wherever the object is = occupied
                 # populate_map(object_pos, 1)
@@ -291,7 +291,7 @@ class B1_Wander_Test:
 
             else:
                 self.updateMapFree()
-                rospy.loginfo("HERE")
+                #rospy.loginfo("HERE")
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
                 rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(

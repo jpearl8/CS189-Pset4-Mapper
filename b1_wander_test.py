@@ -235,79 +235,82 @@ class B1_Wander_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            if (self.crbump | self.lbump):
-                rospy.sleep(1)
-                self.obstacle = True
-                rospy.loginfo("RIGHT BUMP")
-                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
-                    self.updateMapOccupied()
-                for i in range (0, 3):
-                    self.cmd_vel.publish(backwards)
-                    self.rate.sleep()
-                rospy.sleep(1)
-                
-                if self.crbump:
-                        rospy.loginfo("CENTER RIGHT BUMP")
+            if (rospy.Time.now() >= 120):
+                rospy.is_shutdown() = true;
+            while (rospy.Time.now() < 120):
+                if (self.crbump | self.lbump):
+                    rospy.sleep(1)
+                    self.obstacle = True
+                    rospy.loginfo("RIGHT BUMP")
+                    if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+                        self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
+                        self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
+                        self.updateMapOccupied()
+                    for i in range (0, 3):
+                        self.cmd_vel.publish(backwards)
+                        self.rate.sleep()
+                    rospy.sleep(1)
+
+                    if self.crbump:
+                            rospy.loginfo("CENTER RIGHT BUMP")
+                            for i in range(10):
+                                self.cmd_vel.publish(cr)
+                                self.rate.sleep()
+                            rospy.sleep(1) 
+                            self.crbump = False
+                    if self.lbump:
+                        rospy.loginfo("LEFT BUMP")
                         for i in range(10):
-                            self.cmd_vel.publish(cr)
+                            self.cmd_vel.publish(left)
                             self.rate.sleep()
                         rospy.sleep(1) 
-                        self.crbump = False
-                if self.lbump:
-                    rospy.loginfo("LEFT BUMP")
-                    for i in range(10):
-                        self.cmd_vel.publish(left)
+                        self.lbump = False
+
+
+                while(self.robstacle):
+                    print "check1"
+                    rospy.loginfo("RIGHT OBSTACLE")                        
+                    if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+                        self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.cos(float(self.orientation)))
+                        self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.sin(float(self.orientation)))
+                        self.updateMapOccupied()
+
+
+                    for i in range (0, 2):
+                        self.cmd_vel.publish(robstacle)
                         self.rate.sleep()
-                    rospy.sleep(1) 
-                    self.lbump = False
+                        rospy.sleep(.5)
+                    self.robstacle = False
+
+                while(self.lobstacle):
+                    rospy.loginfo("LEFT OBSTACLE")
+                    if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+                        self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.sin(float(self.orientation)))
+                        self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.cos(float(self.orientation)))
+                        self.updateMapOccupied()
+
+                    for i in range (0, 2):
+                        self.cmd_vel.publish(lobstacle)
+                        self.rate.sleep()
+                        rospy.sleep(.5)
+                    self.lobstacle = False
+
+                else:
+                    self.updateMapFree()
+                    #rospy.loginfo("HERE")
+                    move_cmd.linear.x = self.lin_speed
+                    move_cmd.angular.z = 0
 
 
-            while(self.robstacle):
-                print "check1"
-                rospy.loginfo("RIGHT OBSTACLE")                        
-                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                	self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.cos(float(self.orientation)))
-                	self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.sin(float(self.orientation)))
-            		self.updateMapOccupied()
-               
-                
-                for i in range (0, 2):
-                    self.cmd_vel.publish(robstacle)
-                    self.rate.sleep()
-                    rospy.sleep(.5)
-                self.robstacle = False
+                    #current_pos = (self.position[0], self.position[1])
 
-            while(self.lobstacle):
-                rospy.loginfo("LEFT OBSTACLE")
-                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                	self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.sin(float(self.orientation)))
-                	self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.cos(float(self.orientation)))
-            		self.updateMapOccupied()
-                
-                for i in range (0, 2):
-                    self.cmd_vel.publish(lobstacle)
-                    self.rate.sleep()
-                    rospy.sleep(.5)
-                self.lobstacle = False
 
-            else:
-                self.updateMapFree()
-                #rospy.loginfo("HERE")
-                move_cmd.linear.x = self.lin_speed
-                move_cmd.angular.z = 0
 
-     
-                #current_pos = (self.position[0], self.position[1])
-               
-
-                        
-            # publish the velocity
-            self.cmd_vel.publish(move_cmd)
-                # current_pos = free
-                # populate_map(current_pos, 0)
-            self.rate.sleep()
+                # publish the velocity
+                self.cmd_vel.publish(move_cmd)
+                    # current_pos = free
+                    # populate_map(current_pos, 0)
+                self.rate.sleep()
 
 
    

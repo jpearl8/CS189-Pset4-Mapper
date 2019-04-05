@@ -78,7 +78,7 @@ class B1_Wander_Test:
         self.orientation = None
 
         # handle obstacles
-        self.obstacle_pos = [0., 0.]
+        self.obstacle_pos = [0, 0]
         self.obstacle = False
 
         # speed and radians for turns set here
@@ -136,7 +136,7 @@ class B1_Wander_Test:
         turn EKF position in meters into map position in coordinates
         """
         # ratio of world meters to map coordinates 
-        world_map_ratio = 0.15
+        world_map_ratio = 0.2
 
         step_x = int(position[0]/world_map_ratio)
         step_y = int(position[1]/world_map_ratio)
@@ -161,6 +161,9 @@ class B1_Wander_Test:
         if (current_pos_map[0] <= 300 and current_pos_map[0] >= 0 and current_pos_map[1] <= 400 and current_pos_map[1] >= 0):
                 # if the current position is ok, set it to be free and update and show the map 
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
+                self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
+                self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
+                self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
                 print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
                 time.sleep(0.0000001)            
@@ -170,27 +173,30 @@ class B1_Wander_Test:
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
+        print "float me"
 
         current_pos = self.position
         current_orr = self.orientation
-        if ((not(math.isnan(self.obstacle_pos[0])) and (not(math.isnan(self.obstacle_pos[1]))):
-            obstacle_pos = self.obstacle_pos
-            obstacle_orr = self.orientation
+        obstacle_pos = self.obstacle_pos
+        obstacle_orr = self.orientation
 
-            current_pos_map = self.positionToMap(current_pos)
-            obstacle_pos_map = self.positionToMap(obstacle_pos)
-            print "OBSTACLE MAP POS: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
+        current_pos_map = self.positionToMap(current_pos)
+        obstacle_pos_map = self.positionToMap(obstacle_pos)
+        print "OBSTACLE MAP POS: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
-            # check that obstacle pos in the map is ok
-            if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
-                    # if the obstacle position is ok, set it to be occupied
-                    self.my_map[current_pos_map[0], obstacle_pos_map[1]] = 1
-                    # show the map, but still relative to current position 
-                    self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                    time.sleep(0.00000001)
-            else:
-                # if the current position is not ok, let it be known that the values are off, do not change the map array
-                print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
+        # check that obstacle pos in the map is ok
+        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
+                # if the obstacle position is ok, set it to be occupied
+                self.my_map[obstacle_pos_map[0], obstacle_pos_map[1]] = 1
+                self.my_map[obstacle_pos_map[0]-1, obstacle_pos_map[1]] = 1
+                self.my_map[obstacle_pos_map[0]-1, obstacle_pos_map[1]-1] = 1
+                self.my_map[obstacle_pos_map[0], obstacle_pos_map[1]-1] = 1
+                # show the map, but still relative to current position 
+                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
+                time.sleep(0.00000001)
+        else:
+            # if the current position is not ok, let it be known that the values are off, do not change the map array
+            print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
       
     def wander(self):
         """
@@ -233,16 +239,16 @@ class B1_Wander_Test:
                 rospy.sleep(1)
                 self.obstacle = True
                 rospy.loginfo("RIGHT BUMP")
-                self.updateMapOccupied()
-                # wherever the object is = occupied
-                # populate_map(object_pos, 1)
+                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+                    self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
+                    self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
+                    self.updateMapOccupied()
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
                     self.rate.sleep()
                 rospy.sleep(1)
                 
                 if self.crbump:
-                    
                         rospy.loginfo("CENTER RIGHT BUMP")
                         for i in range(10):
                             self.cmd_vel.publish(cr)
@@ -259,14 +265,12 @@ class B1_Wander_Test:
 
 
             while(self.robstacle):
-                # wherever the object is = occupied
-                # populate_map(object_pos, 1)
+                print "check1"
                 rospy.loginfo("RIGHT OBSTACLE")                        
-                if (not(math.isnan(self.orientation))):
-                	self.obstacle_pos[0] = float(self.position[0]) + .3*np.arcsin(float(self.orientation))
-                	self.obstacle_pos[1] = float(self.position[1]) + .3*np.arccos(float(self.orientation))
-                	if (not(math.isnan(self.obstacle_pos))):
-                		self.updateMapOccupied()
+                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+                	self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.cos(float(self.orientation)))
+                	self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.sin(float(self.orientation)))
+            		self.updateMapOccupied()
                
                 
                 for i in range (0, 2):
@@ -277,12 +281,10 @@ class B1_Wander_Test:
 
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
-                if (not(math.isnan(self.orientation))):
-                	self.obstacle_pos[0] = float(self.position[0]) + .3*np.arcsin(float(self.orientation))
-                	self.obstacle_pos[1] = float(self.position[1]) + .3*np.arccos(float(self.orientation))
-                	print self.obstacle_pos
-                	if (not(math.isnan(self.obstacle_pos))):
-                		self.updateMapOccupied()
+                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+                	self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.sin(float(self.orientation)))
+                	self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.cos(float(self.orientation)))
+            		self.updateMapOccupied()
                 
                 for i in range (0, 2):
                     self.cmd_vel.publish(lobstacle)
@@ -295,8 +297,7 @@ class B1_Wander_Test:
                 #rospy.loginfo("HERE")
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
-                rospy.loginfo('({:.2f}, {:.2f})\t{:.1f} deg'.format(
-                   self.position[0], self.position[1], math.degrees(self.orientation)))
+
      
                 #current_pos = (self.position[0], self.position[1])
                
@@ -350,7 +351,7 @@ class B1_Wander_Test:
             # Differentiate between left and right objects
             x, y, w, h = cv2.boundingRect(max_contour)
             if (w*h > 200):
-                if (x < 220):
+                if (x < 150):
                     self.lobstacle = True
                 else:
                     self.robstacle = True
@@ -431,7 +432,7 @@ class B1_Wander_Test:
         Pre-shutdown routine. Stops the robot before rospy.shutdown 
         :return: None
         """
-        self.my_map.SaveMap("saved_map.png", self.position)
+        self.mapObj.SaveMap("saved_map.png", self.position)
         # Close CV Image windows
         cv2.destroyAllWindows()
         # stop turtlebot
@@ -442,9 +443,9 @@ class B1_Wander_Test:
         rospy.sleep(5)
 
 if __name__ == '__main__':
-    try:
-        robot = B1_Wander_Test()
-        robot.wander()
-    except Exception, err:
-        rospy.loginfo("DepthScan node terminated.")
-        print err
+    # try:
+    robot = B1_Wander_Test()
+    robot.wander()
+    # except Exception, err:
+    #     rospy.loginfo("DepthScan node terminated.")
+    #     print err

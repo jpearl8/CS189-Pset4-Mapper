@@ -267,14 +267,12 @@ class B1_Wander_Test:
                 move_cmd.angular.z = 0
 
 
-                #current_pos = (self.position[0], self.position[1])
+
 
 
 
             # publish the velocity
             self.cmd_vel.publish(move_cmd)
-                # current_pos = free
-                # populate_map(current_pos, 0)
             self.rate.sleep()
 
 

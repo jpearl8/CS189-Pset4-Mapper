@@ -24,42 +24,7 @@ import time
 
 
 
-def dist(pos1, pos2):
-    """
-    Get cartesian distance between the (x, y) positions
-    :param pos1: (x, y) position 1
-    :param pos2: (x, y) position 2
-    :return: Distance (float)
-    """
-    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
-
-def orient(curr_pos, goal_pos):
-    """
-    Get necessary heading to reach the goal
-    :param curr_pos: (x, y) current position of the robot
-    :param goal_pos: (x, y) goal position to orient toward
-    """
-    return math.atan2(
-        goal_pos[1] - curr_pos[1],
-        goal_pos[0] - curr_pos[0])
-
-
-def angle_compare(curr_angle, goal_angle):
-    """
-    Determine the difference between the angles, normalized from -pi to +pi
-    :param curr_angle: current angle of the robot, in radians
-    :param goal_angle: goal orientation for the robot, in radians
-    """
-    pi2 = 2 * math.pi
-    # Normalize angle difference
-    angle_diff = (curr_angle - goal_angle) % pi2
-    # Force into range 0-2*pi
-    angle_diff = (angle_diff + pi2) % pi2
-    # Adjust to range of -pi to pi
-    if (angle_diff > math.pi):
-        angle_diff -= pi2
-    return angle_diff
 
 class B1_Wander_Test:
     def __init__(self):

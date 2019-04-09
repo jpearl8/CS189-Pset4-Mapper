@@ -43,8 +43,10 @@ class B2_Test:
         self.orientation = None
 
         # handle obstacles
+        self.obstacle_depth = -1
         self.obstacle_pos = [0, 0]
         self.obstacle = False
+        self.obstalce_rec = [0, 0, 0 0]
 
         # speed and radians for turns set here
         self.lin_speed = 0.2  # m/s
@@ -116,9 +118,9 @@ class B2_Test:
         # show map for this amount of time 
         time.sleep(0.001)
 
-    def updateMapFree(self):
+    def updateMapFree(self, [x, y]):
         # update map with current position and knowlege that this position is free
-        current_pos = self.position
+        current_pos = [x, y]
         current_orr = self.orientation
         current_pos_map = self.positionToMap(current_pos)
 
@@ -211,6 +213,9 @@ class B2_Test:
                     self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
                     self.updateMapOccupied()
+                    for x in range(0, self.obstacle_pos[0] - self.position[0]):
+                        for y in range(0, self.obstacle_pos[1] - self.position[1]):
+                            self.updateMapFree([x, y])
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
                     self.rate.sleep()
@@ -236,9 +241,12 @@ class B2_Test:
                 print "check1"
                 rospy.loginfo("RIGHT OBSTACLE")                        
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.sin(float(self.orientation)))
+                    self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
+                    self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
                     self.updateMapOccupied()
+                    for x in range(0, self.obstacle_pos[0] - self.position[0]):
+                        for y in range(0, self.obstacle_pos[1] - self.position[1]):
+                            self.updateMapFree([x, y])
 
 
                 for i in range (0, 2):
@@ -250,9 +258,13 @@ class B2_Test:
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.sin(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.cos(float(self.orientation)))
+                    self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
+                    self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
                     self.updateMapOccupied()
+                    for x in range(0, self.obstacle_pos[0] - self.position[0]):
+                        for y in range(0, self.obstacle_pos[1] - self.position[1]):
+                            self.updateMapFree([x, y])
+                            
 
                 for i in range (0, 2):
                     self.cmd_vel.publish(lobstacle)
@@ -261,7 +273,7 @@ class B2_Test:
                 self.lobstacle = False
 
             else:
-                self.updateMapFree()
+                self.updateMapFree(self.position)
                 #rospy.loginfo("HERE")
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
@@ -312,6 +324,7 @@ class B2_Test:
             areas = [cv2.contourArea(c) for c in contours]
             max_index = np.argmax(areas)
             max_contour = contours[max_index]
+            new_obstacle_pos = centroid(max_contour)
 
             # Draw rectangle bounding box on image
             # Differentiate between left and right objects
@@ -323,6 +336,11 @@ class B2_Test:
                     self.robstacle = True
 
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
+            
+            if new_obstacle_pos:
+                self.obstacle_rec = [x, x+w, y, y+h]
+                self.obstacle_depth =  self.depth_image[new_obstacle_pos[1]][new_obstacle_pos[0]] 
+
 
 
         return img
@@ -410,7 +428,7 @@ class B2_Test:
 
 if __name__ == '__main__':
     # try:
-    robot = B1_Wander_Test()
+    robot = B2_Test()
     robot.wander()
     # except Exception, err:
     #     rospy.loginfo("DepthScan node terminated.")

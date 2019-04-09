@@ -53,7 +53,6 @@ class B2_Test:
         self.rot_speed = radians(90)
         self.neg_rot = -radians(90)
 
-
         self.crbump = False
         self.lbump = False
 
@@ -117,7 +116,17 @@ class B2_Test:
       
         # show map for this amount of time 
         time.sleep(0.001)
+   
 
+    def freeLoop(self):
+        if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+            self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
+            self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
+            self.updateMapOccupied()
+            for x in range(0, self.obstacle_pos[0] - self.position[0]):
+                for y in range(0, self.obstacle_pos[1] - self.position[1]):
+                    self.updateMapFree([x, y])
+                    
     def updateMapFree(self, [x, y]):
         # update map with current position and knowlege that this position is free
         current_pos = [x, y]
@@ -170,10 +179,10 @@ class B2_Test:
         Run until Ctrl+C pressed
         :return: None
         """
+        # add freeLoop function when ready
         #self.initializeMap()
         # Initialize by starting first side
-        self.state = 'forward'
-        self.state_change_time = rospy.Time.now()
+        self.pause = rospy.Time.now()
         printed_position = False
 
         move_cmd = Twist()
@@ -181,19 +190,14 @@ class B2_Test:
 
         lobstacle = Twist()
         robstacle = Twist()
-        cr = Twist()
-        left = Twist()
-
-
+        bump = Twist()
 
         backwards.linear.x = -self.lin_speed
         backwards.angular.z = 0
 
-        cr.linear.x = 0
-        cr.angular.z = self.rot_speed
+        bump.linear.x = 0
+        bump.angular.z = self.rot_speed
 
-        left.linear.x = 0
-        left.angular.z = self.neg_rot
 
         robstacle.linear.x = 0
         robstacle.angular.z = radians(45)
@@ -202,9 +206,9 @@ class B2_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            # if (self.state_change_time - rospy.time.now() >= 10):
+            # if (rospy.Time.now() >= self.pause + rospy.Duration(10)):
             #     rospy.shutdown()
-            # while (self.state_change_time - rospy.time.now() < 10):
+            # while (rospy.Time.now() < self.pause + rospy.Duration(10)):
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
                 self.obstacle = True
@@ -221,25 +225,23 @@ class B2_Test:
                     self.rate.sleep()
                 rospy.sleep(1)
 
-                if self.crbump:
-                        rospy.loginfo("CENTER RIGHT BUMP")
-                        for i in range(10):
-                            self.cmd_vel.publish(cr)
-                            self.rate.sleep()
-                        rospy.sleep(1) 
-                        self.crbump = False
-                if self.lbump:
-                    rospy.loginfo("LEFT BUMP")
-                    for i in range(10):
-                        self.cmd_vel.publish(left)
-                        self.rate.sleep()
-                    rospy.sleep(1) 
-                    self.lbump = False
+                if (self.crbump):
+                    bump.angular.z = self.rot_speed
+                else: 
+                    bump.angular.z = self.neg_rot
+                    
+                for i in range(10):
+                    self.cmd_vel.publish(bump)
+                    self.rate.sleep()
+                rospy.sleep(1) 
+                self.crbump = False
+                self.lbump = False
 
 
-            while(self.robstacle):
+
+            while(self.robstacle | self.lobstacle):
                 print "check1"
-                rospy.loginfo("RIGHT OBSTACLE")                        
+                rospy.loginfo("OBSTACLE")                        
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
@@ -279,10 +281,6 @@ class B2_Test:
                 move_cmd.angular.z = 0
 
 
-
-
-
-
             # publish the velocity
             self.cmd_vel.publish(move_cmd)
             self.rate.sleep()
@@ -309,6 +307,36 @@ class B2_Test:
         list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
         self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]
 
+    def centroid(contour):
+    """
+    Compute the (x,y) centroid position of the counter
+    :param contour: OpenCV contour
+    :return: Tuple of (x,y) centroid position
+    """
+
+        def centroid_x(c):
+            """
+            Get centroid x position
+            :param c: OpenCV contour
+            :return: x position or -1
+            """
+            M = cv2.moments(c)
+            if M['m00'] == 0:
+                return -1
+            return int(M['m10'] / M['m00'])
+
+        def centroid_y(c):
+            """
+            Get centroid y position
+            :param c: OpenCV contour
+            :return: y position or -1
+            """
+            M = cv2.moments(c)
+            if M['m00'] == 0:
+                return -1
+            return int(M['m01'] / M['m00'])
+
+        return centroid_x(contour), centroid_y(contour)
     def bound_object(self, img_in):
         """
         Draw a bounding box around the largest object in the scene

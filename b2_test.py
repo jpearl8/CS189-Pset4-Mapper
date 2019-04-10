@@ -25,6 +25,38 @@ import time
 
 
 
+def centroid(contour):
+		"""
+		Compute the (x,y) centroid position of the counter
+		:param contour: OpenCV contour
+		:return: Tuple of (x,y) centroid position
+		"""
+
+		def centroid_x(c):
+			"""
+			Get centroid x position
+			:param c: OpenCV contour
+			:return: x position or -1
+			"""
+			M = cv2.moments(c)
+			if M['m00'] == 0:
+				return -1
+			return int(M['m10'] / M['m00'])
+
+		def centroid_y(c):
+			"""
+			Get centroid y position
+			:param c: OpenCV contour
+			:return: y position or -1
+			"""
+			M = cv2.moments(c)
+			if M['m00'] == 0:
+				return -1
+			return int(M['m01'] / M['m00'])
+
+		return centroid_x(contour), centroid_y(contour)
+
+
 
 class B2_Test:
     def __init__(self):
@@ -36,6 +68,7 @@ class B2_Test:
         # create blank array of negative ones to represent blank map 
         self.my_map = -np.ones((40,30))
 
+        self.depth_image =  np.zeros((480, 640))
         # Localization determined from EKF
         # Position is a geometry_msgs/Point object with (x,y,z) fields
         self.position = [3, 3] # just for testing purposes, reset to None later 
@@ -46,7 +79,7 @@ class B2_Test:
         self.obstacle_depth = -1
         self.obstacle_pos = [0, 0]
         self.obstacle = False
-        self.obstalce_rec = [0, 0, 0 0]
+        self.obstalce_rec = [0, 0, 0, 0]
 
         # speed and radians for turns set here
         self.lin_speed = 0.2  # m/s
@@ -127,7 +160,7 @@ class B2_Test:
                 for y in range(0, self.obstacle_pos[1] - self.position[1]):
                     self.updateMapFree([x, y])
                     
-    def updateMapFree(self, [x, y]):
+    def updateMapFree(self, (x, y)):
         # update map with current position and knowlege that this position is free
         current_pos = [x, y]
         current_orr = self.orientation
@@ -149,8 +182,8 @@ class B2_Test:
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
-        print "float me"
-
+        print "hello"
+        print self.position
         current_pos = self.position
         current_orr = self.orientation
         obstacle_pos = self.obstacle_pos
@@ -213,9 +246,12 @@ class B2_Test:
                 rospy.sleep(1)
                 self.obstacle = True
                 rospy.loginfo("RIGHT BUMP")
+                print "POSITION IS HEREEEEE %s" % self.position
+
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
+                    print self.obstacle_pos
                     self.updateMapOccupied()
                     for x in range(self.position[0], self.obstacle_pos[0]):
                         for y in range(self.position[1], self.obstacle_pos[1]):
@@ -241,7 +277,8 @@ class B2_Test:
 
             while(self.robstacle | self.lobstacle):
                 print "check1"
-                rospy.loginfo("OBSTACLE")                        
+                rospy.loginfo("OBSTACLE")
+                print "self.obstacle %s" % self.obstacle_depth                      
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
@@ -307,36 +344,6 @@ class B2_Test:
         list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
         self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]
 
-    def centroid(contour):
-    """
-    Compute the (x,y) centroid position of the counter
-    :param contour: OpenCV contour
-    :return: Tuple of (x,y) centroid position
-    """
-
-        def centroid_x(c):
-            """
-            Get centroid x position
-            :param c: OpenCV contour
-            :return: x position or -1
-            """
-            M = cv2.moments(c)
-            if M['m00'] == 0:
-                return -1
-            return int(M['m10'] / M['m00'])
-
-        def centroid_y(c):
-            """
-            Get centroid y position
-            :param c: OpenCV contour
-            :return: y position or -1
-            """
-            M = cv2.moments(c)
-            if M['m00'] == 0:
-                return -1
-            return int(M['m01'] / M['m00'])
-
-        return centroid_x(contour), centroid_y(contour)
     def bound_object(self, img_in):
         """
         Draw a bounding box around the largest object in the scene
@@ -368,6 +375,7 @@ class B2_Test:
             if new_obstacle_pos:
                 self.obstacle_rec = [x, x+w, y, y+h]
                 self.obstacle_depth =  self.depth_image[new_obstacle_pos[1]][new_obstacle_pos[0]] 
+                print "OBSTACLEEE %s" % self.obstacle_depth
 
 
 
@@ -386,7 +394,7 @@ class B2_Test:
             dst[400:, :] = 0
             dst[:, 0:200] = 0
             dst[:, 440:] = 0
-
+            self.depth_image = dst
             dst2 = self.bound_object(dst)
 
 

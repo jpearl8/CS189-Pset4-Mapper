@@ -405,8 +405,9 @@ class B2_Test:
 
             # Display the thresholded depth image
             # Normalize values to range between 0 and 1 for displaying
-            norm_img = cv_image
-            cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
+#             norm_img = cv_image
+#             cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
+	# not necessary
 
             # Displays thresholded depth image   
             #cv2.imshow('Depth Image', np.hstack((im_mask, dst2)))    

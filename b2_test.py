@@ -253,8 +253,8 @@ class B2_Test:
                     self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
                     print self.obstacle_pos
                     self.updateMapOccupied()
-                    for x in range(self.position[0], self.obstacle_pos[0]):
-                        for y in range(self.position[1], self.obstacle_pos[1]):
+                    for x in range(int(self.position[0]), self.obstacle_pos[0]):
+                        for y in range(int(self.position[1]), self.obstacle_pos[1]):
                             self.updateMapFree([x, y])
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
@@ -283,8 +283,8 @@ class B2_Test:
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
                     self.updateMapOccupied()
-                    for x in range(self.position[0], self.obstacle_pos[0]):
-                        for y in range(self.position[1], self.obstacle_pos[1]):
+                    for x in range(int(self.position[0]), self.obstacle_pos[0]):
+                        for y in range(int(self.position[1]), self.obstacle_pos[1]):
                             self.updateMapFree([x, y])
 
 
@@ -300,8 +300,8 @@ class B2_Test:
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
                     self.updateMapOccupied()
-                    for x in range(self.position[0], self.obstacle_pos[0]):
-                        for y in range(self.position[1], self.obstacle_pos[1]):
+                    for x in range(int(self.position[0]), self.obstacle_pos[0]):
+                        for y in range(int(self.position[1]), self.obstacle_pos[1]):
                             self.updateMapFree([x, y])
                             
 
@@ -374,9 +374,9 @@ class B2_Test:
             
             if new_obstacle_pos:
                 self.obstacle_rec = [x, x+w, y, y+h]
-		self.obstacle_depth =  img[new_obstacle_pos[1]][new_obstacle_pos[0]] 
+                self.obstacle_depth =  img[new_obstacle_pos[1]][new_obstacle_pos[0]] 
                # self.obstacle_depth =  self.depth_image[new_obstacle_pos[1]][new_obstacle_pos[0]] 
-                print "OBSTACLEEE %s" % self.obstacle_depth
+                #print "OBSTACLEEE %s" % self.obstacle_depth
 
 
 

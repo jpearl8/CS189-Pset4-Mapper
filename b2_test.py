@@ -389,14 +389,16 @@ class B2_Test:
         # This imports as the default data encoding. For the ASUS Xtion cameras,
         # this is '32FC1' (single precision floating point [32F], single channel [C1])
         try:
+	    
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
-            dst	= cv2.inRange(cv_image, 0.1, 0.6)	
-            dst[400:, :] = 0
-            dst[:, 0:200] = 0
-            dst[:, 440:] = 0
-            self.depth_image = dst
-            dst2 = self.bound_object(dst)
+            mask = cv2.inRange(cv_image, 0.1, 0.6)
+	    im_mask = cv2.bitwise_and(img, img, mask=mask)
+            im_mask[400:, :] = 0
+            im_mask[:, 0:200] = 0
+            im_mask[:, 440:] = 0
+            self.depth_image = im_mask
+            dst2 = self.bound_object(im_mask)
 
 
 
@@ -407,7 +409,7 @@ class B2_Test:
             cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
 
             # Displays thresholded depth image   
-            #cv2.imshow('Depth Image', np.hstack((dst, dst2)))    
+            #cv2.imshow('Depth Image', np.hstack((im_mask, dst2)))    
             #cv2.waitKey(3)
         except CvBridgeError, err:
             rospy.loginfo(err)

@@ -374,7 +374,8 @@ class B2_Test:
             
             if new_obstacle_pos:
                 self.obstacle_rec = [x, x+w, y, y+h]
-                self.obstacle_depth =  self.depth_image[new_obstacle_pos[1]][new_obstacle_pos[0]] 
+		self.obstacle_depth =  img[new_obstacle_pos[1]][new_obstacle_pos[0]] 
+               # self.obstacle_depth =  self.depth_image[new_obstacle_pos[1]][new_obstacle_pos[0]] 
                 print "OBSTACLEEE %s" % self.obstacle_depth
 
 

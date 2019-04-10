@@ -152,14 +152,21 @@ class B2_Test:
    
 
     def freeLoop(self):
-        if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+        if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) 
+        and not(math.isnan(self.position[1]))) and not(math.isnan(self.obstacle_depth)):
+            """ d = int(self.obstacle_depth) / .2):
+            for i in range (0, d):
+                x = int(float(self.position[0]) + d *(self.obstacle_depth/.2)*np.cos(float(self.orientation)))
+                y = int(float(self.position[1]) + d *(self.obstacle_depth/.2)*np.sin(float(self.orientation)))
+                self.updateMapFree((x, y))
+            """
             self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
             self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
+            for x in range(int(self.position[0]), self.obstacle_pos[0]):
+                for y in range(self.obstacle_pos[1], int(self.position[1])):
+                    self.updateMapFree((x, y))
             self.updateMapOccupied()
-            for x in range(0, self.obstacle_pos[0] - self.position[0]):
-                for y in range(0, self.obstacle_pos[1] - self.position[1]):
-                    self.updateMapFree([x, y])
-                    
+            
     def updateMapFree(self, (x, y)):
         # update map with current position and knowlege that this position is free
         current_pos = [x, y]
@@ -254,8 +261,8 @@ class B2_Test:
                     print self.obstacle_pos
                     self.updateMapOccupied()
                     for x in range(int(self.position[0]), self.obstacle_pos[0]):
-                        for y in range(int(self.position[1]), self.obstacle_pos[1]):
-                            self.updateMapFree([x, y])
+                        for y in range(self.obstacle_pos[1], int(self.position[1])):
+                            self.updateMapFree((x, y))
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
                     self.rate.sleep()
@@ -275,17 +282,17 @@ class B2_Test:
 
 
 
-            while(self.robstacle | self.lobstacle):
+            while(self.robstacle):
                 print "check1"
                 rospy.loginfo("OBSTACLE")
                 print "self.obstacle %s" % self.obstacle_depth                      
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
-                    self.updateMapOccupied()
                     for x in range(int(self.position[0]), self.obstacle_pos[0]):
-                        for y in range(int(self.position[1]), self.obstacle_pos[1]):
-                            self.updateMapFree([x, y])
+                        for y in range(self.obstacle_pos[1], int(self.position[1])):
+                            self.updateMapFree((x, y))
+                    self.updateMapOccupied()
 
 
                 for i in range (0, 2):
@@ -297,12 +304,12 @@ class B2_Test:
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                    self.updateMapOccupied()
+                    self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
+                    self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
                     for x in range(int(self.position[0]), self.obstacle_pos[0]):
-                        for y in range(int(self.position[1]), self.obstacle_pos[1]):
-                            self.updateMapFree([x, y])
+                        for y in range(self.obstacle_pos[1], int(self.position[1])):
+                            self.updateMapFree((x, y))
+                    self.updateMapOccupied()
                             
 
                 for i in range (0, 2):
@@ -392,7 +399,7 @@ class B2_Test:
 	    
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
-            mask = cv2.inRange(cv_image, 0.1, 0.6)
+            mask = cv2.inRange(cv_image, 0.1, 1)
 	    im_mask = cv2.bitwise_and(img, img, mask=mask)
             im_mask[400:, :] = 0
             im_mask[:, 0:200] = 0

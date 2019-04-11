@@ -26,35 +26,35 @@ import time
 
 
 def centroid(contour):
-		"""
-		Compute the (x,y) centroid position of the counter
-		:param contour: OpenCV contour
-		:return: Tuple of (x,y) centroid position
-		"""
+        """
+        Compute the (x,y) centroid position of the counter
+        :param contour: OpenCV contour
+        :return: Tuple of (x,y) centroid position
+        """
 
-		def centroid_x(c):
-			"""
-			Get centroid x position
-			:param c: OpenCV contour
-			:return: x position or -1
-			"""
-			M = cv2.moments(c)
-			if M['m00'] == 0:
-				return -1
-			return int(M['m10'] / M['m00'])
+        def centroid_x(c):
+            """
+            Get centroid x position
+            :param c: OpenCV contour
+            :return: x position or -1
+            """
+            M = cv2.moments(c)
+            if M['m00'] == 0:
+                return -1
+            return int(M['m10'] / M['m00'])
 
-		def centroid_y(c):
-			"""
-			Get centroid y position
-			:param c: OpenCV contour
-			:return: y position or -1
-			"""
-			M = cv2.moments(c)
-			if M['m00'] == 0:
-				return -1
-			return int(M['m01'] / M['m00'])
+        def centroid_y(c):
+            """
+            Get centroid y position
+            :param c: OpenCV contour
+            :return: y position or -1
+            """
+            M = cv2.moments(c)
+            if M['m00'] == 0:
+                return -1
+            return int(M['m01'] / M['m00'])
 
-		return centroid_x(contour), centroid_y(contour)
+        return centroid_x(contour), centroid_y(contour)
 
 
 
@@ -166,10 +166,11 @@ class B2_Test:
                 for y in range(self.obstacle_pos[1], int(self.position[1])):
                     self.updateMapFree((x, y))
             self.updateMapOccupied()
-            
-    def updateMapFree(self, (x, y)):
+    
+    def updateMapFree(self, current_pos):
         # update map with current position and knowlege that this position is free
-        current_pos = [x, y]
+        # x, y 
+        # current_pos = [x, y]
         current_orr = self.orientation
         current_pos_map = self.positionToMap(current_pos)
 
@@ -181,7 +182,7 @@ class B2_Test:
                 self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
                 self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+                #print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
                 time.sleep(0.0000001)            
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
@@ -380,10 +381,8 @@ class B2_Test:
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
             
             if new_obstacle_pos:
-                self.obstacle_rec = [x, x+w, y, y+h]
-                self.obstacle_depth =  img[new_obstacle_pos[1]][new_obstacle_pos[0]] 
-               # self.obstacle_depth =  self.depth_image[new_obstacle_pos[1]][new_obstacle_pos[0]] 
-                #print "OBSTACLEEE %s" % self.obstacle_depth
+                self.obstacle_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
+
 
 
 
@@ -396,29 +395,30 @@ class B2_Test:
         # This imports as the default data encoding. For the ASUS Xtion cameras,
         # this is '32FC1' (single precision floating point [32F], single channel [C1])
         try:
-	    
+        
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
             mask = cv2.inRange(cv_image, 0.1, 1)
-	    im_mask = cv2.bitwise_and(img, img, mask=mask)
-            im_mask[400:, :] = 0
-            im_mask[:, 0:200] = 0
-            im_mask[:, 440:] = 0
+            
+            mask[400:, :] = 0
+            mask[:, 0:200] = 0
+            mask[:, 440:] = 0
+            im_mask = cv2.bitwise_and(cv_image, cv_image, mask=mask)
             self.depth_image = im_mask
-            dst2 = self.bound_object(im_mask)
+            dst2 = self.bound_object(mask)
 
 
 
 
             # Display the thresholded depth image
             # Normalize values to range between 0 and 1 for displaying
-#             norm_img = cv_image
-#             cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
-	# not necessary
+            norm_img = im_mask
+            cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
+    # not necessary
 
             # Displays thresholded depth image   
-            #cv2.imshow('Depth Image', np.hstack((im_mask, dst2)))    
-            #cv2.waitKey(3)
+            cv2.imshow('Depth Image', norm_img)    
+            cv2.waitKey(3)
         except CvBridgeError, err:
             rospy.loginfo(err)
 

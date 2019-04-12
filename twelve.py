@@ -71,10 +71,10 @@ class B1_Wander_Test:
         self.mapObj = mp.MapDrawer(self.positionToMap)
 
         # initialize frontier object from functions defined in integ.py
-        self.frontierObj = integ.Integ_Test()
-        # teach the frontier object about the current map 
-        self.frontier0bj.position = self.position
-        self.frontier0bj.my_map = self.my_map
+        # self.frontierObj = integ.Integ_Test()
+        # # teach the frontier object about the current map 
+        # self.frontier0bj.position = self.position
+        # self.frontier0bj.my_map = self.my_map
                     
 
         # create blank array of negative ones to represent blank map 
@@ -145,6 +145,83 @@ class B1_Wander_Test:
             reset_odom.publish(Empty())
         # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
         self.rate = rospy.Rate(5)
+        
+    def closest_num(self, my_arr, my_int):
+        "find the number in array that is closes to a given number"
+        dif = 1000
+        i = 0
+        while (i != np.size(my_arr)):
+            current_dif = np.abs(my_arr[i] - my_int)
+            if (current_dif == 0):
+                close_num = my_arr[i]
+                break
+            elif (current_dif < dif):
+                dif = current_dif
+                close_num = my_arr[i]
+            i+=1
+        return close_num
+
+    def closest_spot(self, my_big_arr, my_spot):
+        "decide the closest spot for a given array and a given spot"
+        my_arr_x = [idx[0] for idx in my_big_arr]
+        my_arr_y = [idx[1] for idx in my_big_arr]
+
+        x_spot = self.closest_num(my_arr_x, my_spot[0])
+        y_spot = self.closest_num(my_arr_y, my_spot[1])
+
+        return [x_spot, y_spot]
+
+    def nextDest(self):
+        "decide where robot should  go next - frontier exploration"
+        free_map =  np.argwhere(self.my_map == 0)
+        position = self.position
+        close_spot = self.closest_spot(free_map, position)
+
+        return close_spot
+    
+    def nextMove(self):
+        # twist object for this function only 
+        print "in next move"
+        move_cmd = Twist()
+
+        goal_pos = self.nextDest()
+        curr_pos = self.position
+
+        # set orientation to dest
+        dest_orient = math.atan2(goal_pos[1] - curr_pos[1], goal_pos[0] - curr_pos[0])
+
+        # navigate to this destination by getting the angle difference between current orientation and dest orientation 
+        # must be in range of 360 degrees or 2pi
+        pi2 = 2 * math.pi
+        angle_diff = (self.orientation - dest_orient) % pi2
+
+        # force into the range of 0 - 2pi
+        angle_diff = (angle_diff + pi2) % pi2
+
+        # Adjust to range of -pi to pi
+        if (angle_diff > math.pi):
+            angle_diff -= pi2
+
+        # choose sign for angle 
+        if angle_diff < 0:
+            return -angle_diff
+
+        # get the turn angle, direction for min turning - can add stuff to finnesse later 
+        turn_angle = angle_diff * min(angle_diff * 5, math.radians(30))
+
+        # orient to destination 
+        move_cmd.angular.z = turn_angle
+        
+        destination_dist = dist(self.position, goal_pos)
+    
+        # set movement speed tp destination
+        move_cmd.linear.x = min(0.3, destination_dist*0.2)
+
+        if destination_dist < 0.0005:
+            print "TOO CLOSE!"
+            move_cmd.linear.x = 0
+        
+        return move_cmd
 
     def positionToMap(self, position):
         """
@@ -310,7 +387,7 @@ class B1_Wander_Test:
                 if (counter > 4):
                     # let the frontier explorer decide the next move
                     print "frontier explorin"
-                    move_cmd = self.frontierObj.nextMove()
+                    move_cmd = nextMove()
 
                 else:
                     # give robot a regular speed 

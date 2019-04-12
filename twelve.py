@@ -137,9 +137,10 @@ class B1_Wander_Test:
         """
         turn EKF position in meters into map position in coordinates
         """ 
+        world_map_ratio = 0.2
         # convert distances in world to distances in the map 
-        step_x = int(position[0]/self.world_map_ratio)
-        step_y = int(position[1]/self.world_map_ratio)
+        step_x = int(position[0]/world_map_ratio)
+        step_y = int(position[1]/world_map_ratio)
         
         return (step_x + 2, step_y + 15)
 
@@ -165,7 +166,6 @@ class B1_Wander_Test:
                 self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
                 self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
                 self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
                 time.sleep(0.0000001)            
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
@@ -173,35 +173,40 @@ class B1_Wander_Test:
 
     def updateMapOccupied(self):
         """ update map with position of obstacle using depth sensor model """
-        # "width" of obstacle in world space 
-        width_obs = self.obstacle_depth * np.tan(np.deg2rad(30))
-        print "width obs %s" % width_obs
+        world_map_ratio = 0.2
 
-        # position of obstacle relative to current position in world space 
-        obs_x = int(self.position[0] + self.obstacle_depth)
-        obs_y = int(self.position[1] + width_obs)
-        obs_world = [obs_x, obs_y]
-        print "world obs pos %s" % obs_world
+        if self.obstacle_depth > 0:
+            # "width" of obstacle in world space 
+            width_obs = self.obstacle_depth * np.tan(np.deg2rad(30))
+            print "width obs %s" % width_obs
 
-        # convert the obstacle postion and current position to map space 
-        obs_map = self.positionToMap(obs_world)
-        curr_map = self.positionToMap(self.position)
-        print "position of obs_map %s" % obs_map
+            # position of obstacle relative to current position in world space 
+            obs_x = self.position[0] + self.obstacle_depth
+            obs_y = self.position[1] + width_obs
+            obs_world = [obs_x, obs_y]
+            print "position currently world %d, %d" % (self.position[0], self.position[1])
+            print "world obs pos %s" % obs_world
 
-        # want to say that the proportional line in the y-direction from the obstacle is the "width" of the obstacle
-        width_obs_map = int(width_obs/self.world_map_ratio)
-        print "width_obs_map %s" % width_obs_map 
+            # convert the obstacle postion and current position to map space 
+            obs_map = self.positionToMap(obs_world)
+            curr_map = self.positionToMap(self.position)
+            print "position of obs_map %f, %f" % (obs_map[0], obs_map[1])
+            print "position currently in map %f, %f" % (curr_map[0], curr_map[1])
 
-        # mark the obstacle position as occupied 
-        self.my_map[obs_map[0], obs_map[1]] = 1
+            # want to say that the proportional line in the y-direction from the obstacle is the "width" of the obstacle
+            width_obs_map = width_obs/world_map_ratio
+            print "width_obs_map %s" % width_obs_map 
 
-        # mark the "width" of the obstacle as occupied 
-        for i in range(0, width_obs_map):
-            self.my_map[obs_map[0], obs_map[1] - i] = 1
+            # mark the obstacle position as occupied 
+            self.my_map[obs_map[0], obs_map[1]] = 1
 
-        # update the map, relative to my current position and show for a small time%%% orientation? 
-        self.mapObj.UpdateMapDisplay(self.my_map, curr_map)
-        time.sleep(0.0000001)
+            # mark the "width" of the obstacle as occupied 
+            for i in range(0, int(width_obs_map + 2)):
+                self.my_map[obs_map[0], obs_map[1] - i] = 1
+
+            # update the map, relative to my current position and show for a small time%%% orientation? 
+            self.mapObj.UpdateMapDisplay(self.my_map, curr_map)
+            time.sleep(0.0000001)
       
     def wander(self):
         """
@@ -244,7 +249,8 @@ class B1_Wander_Test:
             #     self.handleBump()
 
             if (self.foundObstacle == True):
-                self.updateMapOccupied
+                print "FOUND OBSTACLE IN MAIN"
+                self.updateMapOccupied()
 
             while(self.robstacle):
                 rospy.loginfo("RIGHT OBSTACLE")                        
@@ -297,7 +303,7 @@ class B1_Wander_Test:
 
     def bound_object(self, img_in):
         """
-        Draw a bounding box around the largest object in the scene
+        Draw a bounding box around the largest object in the scene, lets us know when obstacles have been found
         """
         img = np.copy(img_in)
 
@@ -316,15 +322,16 @@ class B1_Wander_Test:
             cv2.drawContours(img, max_contour, -1, color=(0, 255, 0), thickness=3)
 
             # get area of largest obstacle 
-            obstacle_area = areas[max_index]
-            if (obstacle_area > 100):
-                self.foundObstacle = True
+            # obstacle_area = areas[max_index]
+            # if (obstacle_area > 10):
+            #     self.foundObstacle = True
             
 
             # Draw rectangle bounding box on image
             # Differentiate between left and right objects
             x, y, w, h = cv2.boundingRect(max_contour)
             if (w*h > 200):
+                self.foundObstacle = True
                 if (x < 160):
                     self.lobstacle = True
                 else:
@@ -333,6 +340,7 @@ class B1_Wander_Test:
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
             if new_obstacle_pos:
                 self.obstacle_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
+                print self.obstacle_depth
 
 
         return img

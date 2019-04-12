@@ -79,7 +79,6 @@ class B2_Test:
         self.obstacle_depth = -1
         self.obstacle_pos = [0, 0]
         self.obstacle = False
-        self.obstalce_rec = [0, 0, 0, 0]
 
         # speed and radians for turns set here
         self.lin_speed = 0.2  # m/s
@@ -153,13 +152,12 @@ class B2_Test:
 
 
 
-    def updateMapFree(self, current_pos):
+    def updateMapFree(self, current_pos_map):
         # update map with current position and knowlege that this position is free
-        # x, y 
-        # current_pos = [x, y]
+
         print "free"
         current_orr = self.orientation
-        current_pos_map = self.positionToMap(current_pos)
+
 
         # check that current pos in the map is within the bounds
         if (current_pos_map[0] <= 300 and current_pos_map[0] >= 0 and current_pos_map[1] <= 400 and current_pos_map[1] >= 0):
@@ -177,16 +175,12 @@ class B2_Test:
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
-        #print "hello"
-        #print self.position
-        print "occupied"
         current_pos = self.position
         current_orr = self.orientation
-        obstacle_pos = self.obstacle_pos
         obstacle_orr = self.orientation
 
         current_pos_map = self.positionToMap(current_pos)
-        obstacle_pos_map = self.positionToMap(obstacle_pos)
+        obstacle_pos_map = self.obstacle_pos
         #print "OBSTACLE MAP POS: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
         # check that obstacle pos in the map is ok
@@ -205,12 +199,14 @@ class B2_Test:
 
     def freeLoop(self):
         print "called freeLoop"
-        if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+        pos_x = self.positionToMap(self.position[0])
+        pos_y = self.positionToMap(self.position[1])
+        if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
             print "no nans"
-            print "x calculation: p %d and o %d" (self.position[0], self.obstacle_depth*np.cos(float(self.orientation)))
-            self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
+            print "x calculation: p %d and o %d" (pos_x, self.obstacle_depth*np.cos((self.orientation)))
+            self.obstacle_pos[0] = int(pos_x + self.obstacle_depth*np.cos(self.orientation))
             
-            self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
+            self.obstacle_pos[1] = int(pos_y + self.obstacle_depth*np.sin(self.orientation))
             print "x:"
             print self.obstacle_pos[0]
             print "y:"
@@ -219,23 +215,23 @@ class B2_Test:
             obs_pos_y = True
             x1 = 0
             y1 = 0
-            if (self.position[0] > self.obstacle_pos[0]):
+            if (pos_x > self.obstacle_pos[0]):
                 print "obstacle behind"
                 obs_pos_x = False
-            if (self.position[1] > self.obstacle_pos[1]):
+            if (pos_y > self.obstacle_pos[1]):
                 print "obstacle to the right"
                 obs_pos_y = False
-            for x in range(0, int(abs(self.position[0] - self.obstacle_pos[0]))):
-                for y in range(0, int(abs(self.obstacle_pos[1] - self.position[1]))):
+            for x in range(0, int(abs(pos_x - self.obstacle_pos[0]))):
+                for y in range(0, int(abs(self.obstacle_pos[1] - pos_y))):
                     if (obs_pos_x):
-                        x1 = self.position[0] + x
+                        x1 = pos_x + x
                     else:
                         x1 = self.obstacle_pos[0] + x
                     if (obs_pos_y):
-                        y1 = self.position[1] + y
+                        y1 = pos_y + y
                     else:
                         y1 = self.obstacle_pos[1] + y
-                    print "calling free"
+                    print "call ing free"
                     self.updateMapFree((x1, y1))
             print "calling occupied"
             self.updateMapOccupied()  
@@ -358,8 +354,6 @@ class B2_Test:
         # Save the position and orientation
         pos = data.pose.pose.position
         self.position = (pos.x, pos.y)
-        print POSITION:
-        print self.position
         orientation = data.pose.pose.orientation
         list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
         self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]

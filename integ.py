@@ -5,6 +5,7 @@ Makes basic map
 # strange indent in updateMapFree so it is commented out 
 
 
+        
 import random
 import math
 from math import radians, degrees
@@ -104,37 +105,37 @@ class Integ_Test:
         self.position = None
         self.orientation = None
 
-        # Initiliaze
-        rospy.init_node('Basic_Map', anonymous=False)
+        # # Initiliaze
+        # rospy.init_node('Basic_Map', anonymous=False)
 
-        # Tell user how to stop TurtleBot
-        rospy.loginfo("To stop TurtleBot CTRL + C")
-        # What function to call when you ctrl + c    
-        rospy.on_shutdown(self.shutdown)
+        # # Tell user how to stop TurtleBot
+        # rospy.loginfo("To stop TurtleBot CTRL + C")
+        # # What function to call when you ctrl + c    
+        # rospy.on_shutdown(self.shutdown)
 
 
         
         # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
         self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi',Twist, queue_size=10)
 
-        # Subscribe to queues for receiving sensory data
-        rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
+        # # Subscribe to queues for receiving sensory data
+        # rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
 
-        # Use a CvBridge to convert ROS image type to CV Image (Mat)
-        self.bridge = CvBridge()
-        # Subscribe to depth topic
-        rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
+        # # Use a CvBridge to convert ROS image type to CV Image (Mat)
+        # self.bridge = CvBridge()
+        # # Subscribe to depth topic
+        # rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
 
         
-        # Subscribe to robot_pose_ekf for odometry/position information
-        rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
+        # # Subscribe to robot_pose_ekf for odometry/position information
+        # rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
 
         # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
         reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
         # Reset odometry (these messages take about a second to get through)
-        timer = rospy.Time.now()
-        while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
-            reset_odom.publish(Empty())
+        # timer = rospy.Time.now()
+        # while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
+        #     reset_odom.publish(Empty())
         # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
         self.rate = rospy.Rate(5)
 
@@ -170,22 +171,22 @@ class Integ_Test:
         time.sleep(0.001)
 
 
-	# def updateMapFree(self, current_pos_map):
-    # 	current_pos = self.positionFromMap(current_pos_map)
-    #     print "current pos in map %s" % current_pos
+    def updateMapFree(self, current_pos_map):
+        current_pos = self.positionFromMap(current_pos_map)
+        print "current pos in map %s" % current_pos
 
-    #     # check that current pos in the map is within the bounds
-    #     if (current_pos_map[0] <= 40 and current_pos_map[0] >= 0 and current_pos_map[1] <= 30 and current_pos_map[1] >= 0):
-    #             # if the current position is ok, set it to be free and update and show the map 
-    #             self.my_map[current_pos_map[0], current_pos_map[1]] = 0
-    #             self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
-    #             self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
-    #             self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
-    #             self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-    #             time.sleep(0.0000001)            
-    #     else:
-    #         # if the current position is not ok, let it be known that the values are off, do not change the map array
-    #         print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+        # check that current pos in the map is within the bounds
+        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
+                # if the current position is ok, set it to be free and update and show the map 
+                self.my_map[current_pos_map[0], current_pos_map[1]] = 0
+                self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
+                self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
+                self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
+                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
+                time.sleep(0.0000001)            
+        else:
+            # if the current position is not ok, let it be known that the values are off, do not change the map array
+            print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
@@ -235,7 +236,7 @@ class Integ_Test:
                         y1 = pos_y + y
                     else:
                         y1 = self.obstacle_pos[1] + y
-                    #self.updateMapFree((x1, y1))
+                    self.updateMapFree((x1, y1))
             self.updateMapOccupied()  
 
     def closest_num(self, my_arr, my_int):
@@ -389,7 +390,7 @@ class Integ_Test:
                 self.lobstacle = False
 
             else:
-                #self.updateMapFree(self.positionToMap(self.position))
+                self.updateMapFree(self.positionToMap(self.position))
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
 
@@ -400,10 +401,10 @@ class Integ_Test:
 
             # if this code works lol 
             # for i in range (0, 5):
-	        #     print "MOVING IN MAIN"
-	        #     move_cmd = self.nextMove()
-	        #     self.cmd_vel.publish(move_cmd)
-	        #     self.rate.sleep()
+            #     print "MOVING IN MAIN"
+            #     move_cmd = self.nextMove()
+            #     self.cmd_vel.publish(move_cmd)
+            #     self.rate.sleep()
 
             
 

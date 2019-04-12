@@ -236,11 +236,8 @@ class B1_Wander_Test:
         printed_position = False
         
 
-        # the current time
-        now = rospy.Time.now()
-
         # a duration of 180s 
-        time_ago = now - rospy.Duration(180)
+        time_ago = timer - rospy.Duration(180)
 
         # stop after a given time duration of 180s
         if (now > time_ago):

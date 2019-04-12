@@ -167,16 +167,14 @@ class B2_Test:
       
         # show map for this amount of time 
         time.sleep(0.001)
-   
+
 
 	def updateMapFree(self, current_pos_map):
-        # update map with current position and knowlege that this position is free
-
-        current_orr = self.orientation
-        current_pos = self.positionFromMap(current_pos_map)
+    	current_pos = self.positionFromMap(current_pos_map)
+        print "current pos in map %s" % current_pos
 
         # check that current pos in the map is within the bounds
-        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
+        if (current_pos_map[0] <= 40 and current_pos_map[0] >= 0 and current_pos_map[1] <= 30 and current_pos_map[1] >= 0):
                 # if the current position is ok, set it to be free and update and show the map 
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
                 self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
@@ -273,7 +271,7 @@ class B2_Test:
         free_map =  np.argwhere(self.my_map == 0)
         position = self.position
         close_spot = self.closest_spot(free_map, position)
-        print "close_spot %s" % close_spot
+       # print "close_spot %s" % close_spot
         return close_spot
     
     def nextMove(self):

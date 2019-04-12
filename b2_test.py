@@ -207,7 +207,9 @@ class B2_Test:
         print "called freeLoop"
         if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
             print "no nans"
+            print "x calculation: p %d and o %d" (self.position[0], self.obstacle_depth*np.cos(float(self.orientation)))
             self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
+            
             self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
             print "x:"
             print self.obstacle_pos[0]

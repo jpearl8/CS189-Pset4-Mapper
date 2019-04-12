@@ -22,7 +22,14 @@ import map_util as mp
 import numpy as np
 import time
 
-
+def dist(pos1, pos2):
+    """
+    Get cartesian distance between the (x, y) positions
+    :param pos1: (x, y) position 1
+    :param pos2: (x, y) position 2
+    :return: Distance (float)
+    """
+    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
 
 def centroid(contour):
@@ -215,7 +222,7 @@ class B2_Test:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
-    def closest_num(my_arr, my_int):
+    def closest_num(self, my_arr, my_int):
         "find the number in array that is closes to a given number"
         dif = 1000
         i = 0
@@ -233,21 +240,22 @@ class B2_Test:
             i+=1
         return close_num
 
-    def closest_spot(my_big_arr, my_spot):
+    def closest_spot(self, my_big_arr, my_spot):
         "decide the closest spot for a given array and a given spot"
         my_arr_x = [idx[0] for idx in my_big_arr]
         my_arr_y = [idx[1] for idx in my_big_arr]
 
-        x_spot = closest_num(my_arr_x, my_spot[0])
-        y_spot = closest_num(my_arr_y, my_spot[1])
-        print "closest spot functioning"
+        x_spot = self.closest_num(my_arr_x, my_spot[0])
+        y_spot = self.closest_num(my_arr_y, my_spot[1])
+        
 
         return [x_spot, y_spot]
 
     def nextDest(self):
         "decide where robot should  go next - frontier exploration"
         free_map =  np.argwhere(self.my_map == 0)
-        close_spot = closest_spot(free_map, self.position)
+        position = self.position
+        close_spot = self.closest_spot(free_map, position)
         print "close_spot %s" % close_spot
         return close_spot
     
@@ -256,7 +264,7 @@ class B2_Test:
         print "in next move"
         move_cmd = Twist()
 
-        goal_pos = nextDest()
+        goal_pos = self.nextDest()
         curr_pos = self.position
         # set orientation to dest
         dest_orient = math.atan2(goal_pos[1] - curr_pos[1], goal_pos[0] - curr_pos[0])
@@ -280,7 +288,7 @@ class B2_Test:
         move_cmd.angular.z = turn_angle
         
         destination_dist = dist(self.position, goal_pos)
-        print "destination dist %s" % destination_dist
+        #print "destination dist %s" % destination_dist
         # set movement speed tp destination
         move_cmd.linear.x = min(0.3, destination_dist*0.2)
 
@@ -328,13 +336,13 @@ class B2_Test:
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
                 self.obstacle = True
-                rospy.loginfo("RIGHT BUMP o: small x, big y")
+                #rospy.loginfo("RIGHT BUMP o: small x, big y")
                 #print "POSITION IS HEREEEEE %s" % self.position
 
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.sin(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.cos(float(self.orientation)))
-                    print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
+                    #print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
                     obs_pos_x = True
                     obs_pos_y = True
                     x1 = 0
@@ -381,8 +389,8 @@ class B2_Test:
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                    print self.orientation
-                    print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
+                    #print self.orientation
+                    #print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
                     obs_pos_x = True
                     obs_pos_y = True
                     x1 = 0
@@ -407,7 +415,7 @@ class B2_Test:
 
 
                 for i in range (0, 2):
-                    print "orientation %d" % self.orientation 
+                    #print "orientation %d" % self.orientation 
                     self.cmd_vel.publish(robstacle)
                     self.rate.sleep()
                     rospy.sleep(.5)
@@ -418,7 +426,7 @@ class B2_Test:
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
                     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                    print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
+                   #print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
                     obs_pos_x = True
                     obs_pos_y = True
                     x1 = 0
@@ -456,14 +464,16 @@ class B2_Test:
 
 
             # publish the velocity
-            self.cmd_vel.publish(move_cmd)
-            self.rate.sleep()
+            for i in range (0, 2):
+	            self.cmd_vel.publish(move_cmd)
+	            self.rate.sleep()
 
             # if this code works lol 
-            print "MOVING IN MAIN"
-            move_cmd = nextMove()
-            self.cmd_vel.publish(move_cmd)
-            self.rate.sleep()
+            for i in range (0, 5):
+	            print "MOVING IN MAIN"
+	            move_cmd = self.nextMove()
+	            self.cmd_vel.publish(move_cmd)
+	            self.rate.sleep()
 
             
 

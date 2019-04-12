@@ -204,7 +204,7 @@ class B2_Test:
     def freeLoop(self):
         if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
             self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
-            self.obstacle_pos[1] = int(float(self.position[1]) - self.obstacle_depth*np.cos(float(self.orientation)))
+            self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
             obs_pos_x = True
             obs_pos_y = True
             x1 = 0
@@ -293,7 +293,7 @@ class B2_Test:
                 #print "self.obstacle %s" % self.obstacle_depth  
                 self.freeLoop()                    
                 for i in range (0, 2):
-                    print "orientation %d" % self.orientation 
+                    #print "orientation %d" % self.orientation 
                     self.cmd_vel.publish(robstacle)
                     self.rate.sleep()
                     rospy.sleep(.5)
@@ -344,6 +344,8 @@ class B2_Test:
         # Save the position and orientation
         pos = data.pose.pose.position
         self.position = (pos.x, pos.y)
+        print POSITION:
+        print self.position
         orientation = data.pose.pose.orientation
         list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
         self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]

@@ -67,15 +67,21 @@ class B1_Wander_Test:
         # create blank array of negative ones to represent blank map 
         self.my_map = -np.ones((40,30))
 
+        # ratio of world meters to map coordinates 
+        self.world_map_ratio = 0.2
+
         # Localization determined from EKF
         # Position is a geometry_msgs/Point object with (x,y,z) fields
         self.position = [3, 3] # just for testing purposes, reset to None later 
         # Orientation is the rotation in the floor plane from initial pose
         self.orientation = None
 
-        # handle obstacles
+        # handle obstacles and bumps
         self.obstacle_pos = [0, 0]
         self.obstacle = False
+
+        # for mapping obstacles
+        self.foundObstacle = False
 
         # speed and radians for turns set here
         self.lin_speed = 0.2  # m/s
@@ -130,12 +136,10 @@ class B1_Wander_Test:
     def positionToMap(self, position):
         """
         turn EKF position in meters into map position in coordinates
-        """
-        # ratio of world meters to map coordinates 
-        world_map_ratio = 0.2
-
-        step_x = int(position[0]/world_map_ratio)
-        step_y = int(position[1]/world_map_ratio)
+        """ 
+        # convert distances in world to distances in the map 
+        step_x = int(position[0]/self.world_map_ratio)
+        step_y = int(position[1]/self.world_map_ratio)
         
         return (step_x + 2, step_y + 15)
 
@@ -168,31 +172,36 @@ class B1_Wander_Test:
             print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
 
     def updateMapOccupied(self):
-        # update map with position of obstacle and knowledge that that position will be occupied 
-        print "float me"
+        """ update map with position of obstacle using depth sensor model """
+        # "width" of obstacle in world space 
+        width_obs = self.obstacle_depth * np.tan(np.deg2rad(30))
+        print "width obs %s" % width_obs
 
-        current_pos = self.position
-        current_orr = self.orientation
-        obstacle_pos = self.obstacle_pos
-        obstacle_orr = self.orientation
+        # position of obstacle relative to current position in world space 
+        obs_x = int(self.position[0] + self.obstacle_depth)
+        obs_y = int(self.position[1] + width_obs)
+        obs_world = [obs_x, obs_y]
+        print "world obs pos %s" % obs_world
 
-        current_pos_map = self.positionToMap(current_pos)
-        obstacle_pos_map = self.positionToMap(obstacle_pos)
-        print "OBSTACLE MAP POS: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
+        # convert the obstacle postion and current position to map space 
+        obs_map = self.positionToMap(obs_world)
+        curr_map = self.positionToMap(self.position)
+        print "position of obs_map %s" % obs_map
 
-        # check that obstacle pos in the map is ok
-        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
-                # if the obstacle position is ok, set it to be occupied
-                self.my_map[obstacle_pos_map[0], obstacle_pos_map[1]] = 1
-                self.my_map[obstacle_pos_map[0]-1, obstacle_pos_map[1]] = 1
-                self.my_map[obstacle_pos_map[0]-1, obstacle_pos_map[1]-1] = 1
-                self.my_map[obstacle_pos_map[0], obstacle_pos_map[1]-1] = 1
-                # show the map, but still relative to current position 
-                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                time.sleep(0.00000001)
-        else:
-            # if the current position is not ok, let it be known that the values are off, do not change the map array
-            print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
+        # want to say that the proportional line in the y-direction from the obstacle is the "width" of the obstacle
+        width_obs_map = int(width_obs/self.world_map_ratio)
+        print "width_obs_map %s" % width_obs_map 
+
+        # mark the obstacle position as occupied 
+        self.my_map[obs_map[0], obs_map[1]] = 1
+
+        # mark the "width" of the obstacle as occupied 
+        for i in range(0, width_obs_map):
+            self.my_map[obs_map[0], obs_map[1] - i] = 1
+
+        # update the map, relative to my current position and show for a small time%%% orientation? 
+        self.mapObj.UpdateMapDisplay(self.my_map, curr_map)
+        time.sleep(0.0000001)
       
     def wander(self):
         """
@@ -213,8 +222,6 @@ class B1_Wander_Test:
         cr = Twist()
         left = Twist()
 
-
-
         backwards.linear.x = -self.lin_speed
         backwards.angular.z = 0
 
@@ -231,45 +238,16 @@ class B1_Wander_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            # if (self.state_change_time - rospy.time.now() >= 10):
-            #     rospy.shutdown()
-            # while (self.state_change_time - rospy.time.now() < 10):
-            if (self.crbump | self.lbump):
-                rospy.sleep(1)
-                self.obstacle = True
-                rospy.loginfo("RIGHT BUMP")
-                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
-                    self.updateMapOccupied()
-                for i in range (0, 3):
-                    self.cmd_vel.publish(backwards)
-                    self.rate.sleep()
-                rospy.sleep(1)
+            # handle bumps
+            # if (data.state == BumperEvent.PRESSED):
+            #     rospy.loginfo("bumped")
+            #     self.handleBump()
 
-                if self.crbump:
-                        rospy.loginfo("CENTER RIGHT BUMP")
-                        for i in range(10):
-                            self.cmd_vel.publish(cr)
-                            self.rate.sleep()
-                        rospy.sleep(1) 
-                        self.crbump = False
-                if self.lbump:
-                    rospy.loginfo("LEFT BUMP")
-                    for i in range(10):
-                        self.cmd_vel.publish(left)
-                        self.rate.sleep()
-                    rospy.sleep(1) 
-                    self.lbump = False
-
+            if (self.foundObstacle == True):
+                self.updateMapOccupied
 
             while(self.robstacle):
-                print "check1"
                 rospy.loginfo("RIGHT OBSTACLE")                        
-                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.sin(float(self.orientation)))
-                    self.updateMapOccupied()
 
 
                 for i in range (0, 2):
@@ -280,11 +258,6 @@ class B1_Wander_Test:
 
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE")
-                if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                    self.obstacle_pos[0] = int(float(self.position[0]) + .4*np.sin(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .4*np.cos(float(self.orientation)))
-                    self.updateMapOccupied()
-
                 for i in range (0, 2):
                     self.cmd_vel.publish(lobstacle)
                     self.rate.sleep()
@@ -293,20 +266,14 @@ class B1_Wander_Test:
 
             else:
                 self.updateMapFree()
-                #rospy.loginfo("HERE")
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
 
+                # publish the velocity
+                self.cmd_vel.publish(move_cmd)
+                self.rate.sleep()
 
-
-
-
-
-            # publish the velocity
-            self.cmd_vel.publish(move_cmd)
-            self.rate.sleep()
-
-
+   
    
     def process_ekf(self, data):
         """
@@ -350,7 +317,9 @@ class B1_Wander_Test:
 
             # get area of largest obstacle 
             obstacle_area = areas[max_index]
-            print "obstacle_area %s" % obstacle_area
+            if (obstacle_area > 100):
+                self.foundObstacle = True
+            
 
             # Draw rectangle bounding box on image
             # Differentiate between left and right objects
@@ -364,7 +333,6 @@ class B1_Wander_Test:
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
             if new_obstacle_pos:
                 self.obstacle_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
-                print "obstacle depth: %s" % self.obstacle_depth
 
 
         return img
@@ -430,6 +398,34 @@ class B1_Wander_Test:
             elif (data.bumper == BumperEvent.RIGHT):
                 self.crbump = True
                 self.lbump = False  
+
+    #  def handleBump(self):
+    #     cr = Twist()
+    #     backwards = Twist()
+    #     if (self.crbump | self.lbump):
+    #         rospy.sleep(1)
+    #         self.obstacle = True
+    #         rospy.loginfo("RIGHT BUMP")
+    #             self.updateMapOccupied()
+    #         for i in range (0, 3):
+    #             self.cmd_vel.publish(backwards)
+    #             self.rate.sleep()
+    #         rospy.sleep(1)
+
+    #         if self.crbump:
+    #                 rospy.loginfo("CENTER RIGHT BUMP")
+    #                 for i in range(10):
+    #                     self.cmd_vel.publish(cr)
+    #                     self.rate.sleep()
+    #                 rospy.sleep(1) 
+    #                 self.crbump = False
+    #         if self.lbump:
+    #             rospy.loginfo("LEFT BUMP")
+    #             for i in range(10):
+    #                 self.cmd_vel.publish(left)
+    #                 self.rate.sleep()
+    #             rospy.sleep(1) 
+    #             self.lbump = False
     
 
     def shutdown(self):

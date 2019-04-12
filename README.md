@@ -1,7 +1,20 @@
 # pset-4
 The Autonomous Mapper
+Readme for 4b:
+Our solution is in integ.py
+
+We took 4a as our basis code to build off and adapt for the next portion of the pset. 
+The two distinct changes from 4a to 4b are changes made to obstacle location interpretation and calculation and the frontear based exploration.
+
+In accordance to obstacle location interpretation, two changes were made. The depth camera was used to calculate the location of the obstacle on the grid. Because the depth was kept in a range of less than a meter, the orientation of the robot was still used in the depth calculation. After the coordinates of the obstacle were calculated, the function looped through the the grid between the robot's position and the obstacle's position, marking those coordinates as free. Instead of going directly across the line where the obstacle is located, marking the box shape in the loop yielded mapping results at a faster rate and did not have a noticably different accuracy difference because the range of the depth camera has at a smaller maximum distance.
 
 
+
+
+
+
+
+Readme for 4a:
 Our solution is in b1_wander_test.py.
 
 In the class-initializer function, globals are initialized and modules are subscribed to data from EKFs, twist objects, depth processing, and bumper processing. 

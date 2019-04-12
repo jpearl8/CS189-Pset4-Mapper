@@ -211,8 +211,8 @@ class B2_Test:
 
     def freeLoop(self):
         print "called freeLoop"
-        pos_x = self.positionToMap(self.position[0])
-        pos_y = self.positionToMap(self.position[1])
+        (pos_x, pos_y) = self.positionToMap(self.position)
+
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
             print "no nans"
             print "x calculation: p %d and o %d" (pos_x, self.obstacle_depth*np.cos((self.orientation)))

@@ -157,6 +157,7 @@ class B2_Test:
         # update map with current position and knowlege that this position is free
         # x, y 
         # current_pos = [x, y]
+        print "free"
         current_orr = self.orientation
         current_pos_map = self.positionToMap(current_pos)
 
@@ -178,6 +179,7 @@ class B2_Test:
         # update map with position of obstacle and knowledge that that position will be occupied 
         #print "hello"
         #print self.position
+        print "occupied"
         current_pos = self.position
         current_orr = self.orientation
         obstacle_pos = self.obstacle_pos
@@ -202,16 +204,24 @@ class B2_Test:
             print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
     def freeLoop(self):
+        print "called freeLoop"
         if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
+            print "no nans"
             self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
             self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
+            print "x:"
+            print self.obstacle_pos[0]
+            print "y:"
+            print self.obstacle_pos[1]
             obs_pos_x = True
             obs_pos_y = True
             x1 = 0
             y1 = 0
             if (self.position[0] > self.obstacle_pos[0]):
+                print "obstacle behind"
                 obs_pos_x = False
             if (self.position[1] > self.obstacle_pos[1]):
+                print "obstacle to the right"
                 obs_pos_y = False
             for x in range(0, int(abs(self.position[0] - self.obstacle_pos[0]))):
                 for y in range(0, int(abs(self.obstacle_pos[1] - self.position[1]))):
@@ -223,7 +233,9 @@ class B2_Test:
                         y1 = self.position[1] + y
                     else:
                         y1 = self.obstacle_pos[1] + y
+                    print "calling free"
                     self.updateMapFree((x1, y1))
+            print "calling occupied"
             self.updateMapOccupied()  
 
     def wander(self):

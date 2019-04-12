@@ -346,9 +346,8 @@ class B2_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            # if (rospy.Time.now() >= self.pause + rospy.Duration(10)):
-            #     rospy.shutdown()
-            # while (rospy.Time.now() < self.pause + rospy.Duration(10)):
+            
+
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
                 self.obstacle = True
@@ -400,11 +399,11 @@ class B2_Test:
             self.rate.sleep()
 
             # if this code works lol 
-            for i in range (0, 5):
-	            print "MOVING IN MAIN"
-	            move_cmd = self.nextMove()
-	            self.cmd_vel.publish(move_cmd)
-	            self.rate.sleep()
+            # for i in range (0, 5):
+	        #     print "MOVING IN MAIN"
+	        #     move_cmd = self.nextMove()
+	        #     self.cmd_vel.publish(move_cmd)
+	        #     self.rate.sleep()
 
             
 

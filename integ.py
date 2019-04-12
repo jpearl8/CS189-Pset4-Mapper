@@ -214,7 +214,82 @@ class B2_Test:
         else:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
-      
+
+    def closest_num(my_arr, my_int):
+        "find the number in array that is closes to a given number"
+        dif = 1000
+        i = 0
+        while (i != np.size(my_arr)):
+            #print "i %d" % (i)
+            current_dif = np.abs(my_arr[i] - my_int)
+            if (current_dif == 0):
+                #print "dif_x  is  0? %d where x is %d" % (current_dif, my_arr[i])
+                close_num = my_arr[i]
+                break
+            elif (current_dif < dif):
+                dif = current_dif
+                #print "dif_x  is %d where x is %d" % (dif, my_arr[i])
+                close_num = my_arr[i]
+            i+=1
+        return close_num
+
+    def closest_spot(my_big_arr, my_spot):
+        "decide the closest spot for a given array and a given spot"
+        my_arr_x = [idx[0] for idx in my_big_arr]
+        my_arr_y = [idx[1] for idx in my_big_arr]
+
+        x_spot = closest_num(my_arr_x, my_spot[0])
+        y_spot = closest_num(my_arr_y, my_spot[1])
+        print "closest spot functioning"
+
+        return [x_spot, y_spot]
+
+    def nextDest(self):
+        "decide where robot should  go next - frontier exploration"
+        free_map =  np.argwhere(self.my_map == 0)
+        close_spot = closest_spot(free_map, self.position)
+        print "close_spot %s" % close_spot
+        return close_spot
+    
+    def nextMove(self):
+        # twist object for this function only 
+        print "in next move"
+        move_cmd = Twist()
+
+        goal_pos = nextDest()
+        curr_pos = self.position
+        # set orientation to dest
+        dest_orient = math.atan2(goal_pos[1] - curr_pos[1], goal_pos[0] - curr_pos[0])
+
+        #----------navigate to this point
+
+        #----get the angle difference between current orientation and dest orientation 
+        # must be in range of 360 degrees or 2pi
+        pi2 = 2 * math.pi
+        angle_diff = (self.orientation - dest_orient) % pi2
+        # force into the range of 0 - 2pi
+        angle_diff = (angle_diff + pi2) % pi2
+        # Adjust to range of -pi to pi
+        if (angle_diff > math.pi):
+            angle_diff -= pi2
+        
+        #----get the turn angle, direction for min turning - can add stuff to finnesse later 
+        turn_angle = angle_diff 
+
+        #----orient to destination 
+        move_cmd.angular.z = turn_angle
+        
+        destination_dist = dist(self.position, goal_pos)
+        print "destination dist %s" % destination_dist
+        # set movement speed tp destination
+        move_cmd.linear.x = min(0.3, destination_dist*0.2)
+
+        if destination_dist < 0.0005:
+            print "TOO CLOSE!"
+            move_cmd.linear.x = 0
+        
+        return move_cmd
+
     def wander(self):
         """
         Run until Ctrl+C pressed
@@ -381,6 +456,12 @@ class B2_Test:
 
 
             # publish the velocity
+            self.cmd_vel.publish(move_cmd)
+            self.rate.sleep()
+
+            # if this code works lol 
+            print "MOVING IN MAIN"
+            move_cmd = nextMove()
             self.cmd_vel.publish(move_cmd)
             self.rate.sleep()
 

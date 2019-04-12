@@ -204,7 +204,7 @@ class B2_Test:
     def freeLoop(self):
         if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
             self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
-            self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
+            self.obstacle_pos[1] = int(float(self.position[1]) - self.obstacle_depth*np.cos(float(self.orientation)))
             obs_pos_x = True
             obs_pos_y = True
             x1 = 0
@@ -268,30 +268,6 @@ class B2_Test:
                 #print "POSITION IS HEREEEEE %s" % self.position
                 self.obstacle_depth = .25
                 self.freeLoop()
-                # if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                #     self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.sin(float(self.orientation)))
-                #     self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.cos(float(self.orientation)))
-                #     print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
-                #     obs_pos_x = True
-                #     obs_pos_y = True
-                #     x1 = 0
-                #     y1 = 0
-                #     if (self.position[0] > self.obstacle_pos[0]):
-                #         obs_pos_x = False
-                #     if (self.position[1] > self.obstacle_pos[1]):
-                #         obs_pos_y = False
-                #     for x in range(0, int(abs(self.position[0]- self.obstacle_pos[0]))):
-                #         for y in range(0, int(abs(self.obstacle_pos[1] - self.position[1]))):
-                #             if (obs_pos_x):
-                #                x1 = self.position[0] + x
-                #             else:
-                #                x1 = self.obstacle_pos[0] + x
-                #             if (obs_pos_y):
-                #                y1 = self.position[1] + y
-                #             else:
-                #                y1 = self.obstacle_pos[1] + y
-                #             self.updateMapFree((x1, y1))
-                    # self.updateMapOccupied()
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
                     self.rate.sleep()
@@ -316,34 +292,6 @@ class B2_Test:
 
                 #print "self.obstacle %s" % self.obstacle_depth  
                 self.freeLoop()                    
-                # if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                #     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
-                #     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                #     print self.orientation
-                #     print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
-                #     obs_pos_x = True
-                #     obs_pos_y = True
-                #     x1 = 0
-                #     y1 = 0
-                #     if (self.position[0] > self.obstacle_pos[0]):
-                #         obs_pos_x = False
-                #     if (self.position[1] > self.obstacle_pos[1]):
-                #         obs_pos_y = False
-                #     for x in range(0, int(abs(self.position[0] - self.obstacle_pos[0]))):
-                #         for y in range(0, int(abs(self.obstacle_pos[1] - self.position[1]))):
-                #             if (obs_pos_x):
-                #                x1 = self.position[0] + x
-                #             else:
-                #                x1 = self.obstacle_pos[0] + x
-                #             if (obs_pos_y):
-                #                y1 = self.position[1] + y
-                #             else:
-                #                y1 = self.obstacle_pos[1] + y
-                #             self.updateMapFree((x1, y1))
-                    
-                #     self.updateMapOccupied()
-
-
                 for i in range (0, 2):
                     print "orientation %d" % self.orientation 
                     self.cmd_vel.publish(robstacle)
@@ -354,30 +302,8 @@ class B2_Test:
             while(self.lobstacle):
                 rospy.loginfo("LEFT OBSTACLE larger x")
                 self.freeLoop()
-                # if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
-                #     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.sin(float(self.orientation)))
-                #     self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                #     print "robot pos: %d %d obstacle pos: %d %d" % (self.position[0], self.position[1], self.obstacle_pos[0], self.obstacle_pos[1])
-                #     obs_pos_x = True
-                #     obs_pos_y = True
-                #     x1 = 0
-                #     y1 = 0
-                #     if (self.position[0] > self.obstacle_pos[0]):
-                #         obs_pos_x = False
-                #     if (self.position[1] > self.obstacle_pos[1]):
-                #         obs_pos_y = False
-                #     for x in range(0, int(abs(self.position[0] - self.obstacle_pos[0]))):
-                #         for y in range(0, int(abs(self.obstacle_pos[1] - self.position[1]))):
-                #             if (obs_pos_x):
-                #                x1 = self.position[0] + x
-                #             else:
-                #                x1 = self.obstacle_pos[0] + x
-                #             if (obs_pos_y):
-                #                y1 = self.position[1] + y
-                #             else:
-                #                y1 = self.obstacle_pos[1] + y
-                #             self.updateMapFree((x1, y1))
-                #     self.updateMapOccupied()
+
+
                             
 
                 for i in range (0, 2):

@@ -2,14 +2,15 @@
 Pset 4b 
 Makes basic map
 """
+# strange indent in updateMapFree so it is commented out 
 
 
-import rospy
 import random
 import math
 from math import radians, degrees
 import cv2
 import numpy as np
+import rospy
 from geometry_msgs.msg import Twist
 import tf
 from kobuki_msgs.msg import BumperEvent, CliffEvent, WheelDropEvent
@@ -65,7 +66,7 @@ def centroid(contour):
 
 
 
-class B2_Test:
+class Integ_Test:
     def __init__(self):
         #INITIALIZER: 
         # initializer for the maps 
@@ -169,22 +170,22 @@ class B2_Test:
         time.sleep(0.001)
 
 
-	def updateMapFree(self, current_pos_map):
-    	current_pos = self.positionFromMap(current_pos_map)
-        print "current pos in map %s" % current_pos
+	# def updateMapFree(self, current_pos_map):
+    # 	current_pos = self.positionFromMap(current_pos_map)
+    #     print "current pos in map %s" % current_pos
 
-        # check that current pos in the map is within the bounds
-        if (current_pos_map[0] <= 40 and current_pos_map[0] >= 0 and current_pos_map[1] <= 30 and current_pos_map[1] >= 0):
-                # if the current position is ok, set it to be free and update and show the map 
-                self.my_map[current_pos_map[0], current_pos_map[1]] = 0
-                self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
-                self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
-                self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
-                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                time.sleep(0.0000001)            
-        else:
-            # if the current position is not ok, let it be known that the values are off, do not change the map array
-            print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+    #     # check that current pos in the map is within the bounds
+    #     if (current_pos_map[0] <= 40 and current_pos_map[0] >= 0 and current_pos_map[1] <= 30 and current_pos_map[1] >= 0):
+    #             # if the current position is ok, set it to be free and update and show the map 
+    #             self.my_map[current_pos_map[0], current_pos_map[1]] = 0
+    #             self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
+    #             self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
+    #             self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
+    #             self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
+    #             time.sleep(0.0000001)            
+    #     else:
+    #         # if the current position is not ok, let it be known that the values are off, do not change the map array
+    #         print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
@@ -234,7 +235,7 @@ class B2_Test:
                         y1 = pos_y + y
                     else:
                         y1 = self.obstacle_pos[1] + y
-                    self.updateMapFree((x1, y1))
+                    #self.updateMapFree((x1, y1))
             self.updateMapOccupied()  
 
     def closest_num(self, my_arr, my_int):
@@ -242,15 +243,12 @@ class B2_Test:
         dif = 1000
         i = 0
         while (i != np.size(my_arr)):
-            #print "i %d" % (i)
             current_dif = np.abs(my_arr[i] - my_int)
             if (current_dif == 0):
-                #print "dif_x  is  0? %d where x is %d" % (current_dif, my_arr[i])
                 close_num = my_arr[i]
                 break
             elif (current_dif < dif):
                 dif = current_dif
-                #print "dif_x  is %d where x is %d" % (dif, my_arr[i])
                 close_num = my_arr[i]
             i+=1
         return close_num
@@ -262,7 +260,6 @@ class B2_Test:
 
         x_spot = self.closest_num(my_arr_x, my_spot[0])
         y_spot = self.closest_num(my_arr_y, my_spot[1])
-        
 
         return [x_spot, y_spot]
 
@@ -271,7 +268,7 @@ class B2_Test:
         free_map =  np.argwhere(self.my_map == 0)
         position = self.position
         close_spot = self.closest_spot(free_map, position)
-       # print "close_spot %s" % close_spot
+
         return close_spot
     
     def nextMove(self):
@@ -281,29 +278,34 @@ class B2_Test:
 
         goal_pos = self.nextDest()
         curr_pos = self.position
+
         # set orientation to dest
         dest_orient = math.atan2(goal_pos[1] - curr_pos[1], goal_pos[0] - curr_pos[0])
 
-        #----------navigate to this point
-
-        #----get the angle difference between current orientation and dest orientation 
+        # navigate to this destination by getting the angle difference between current orientation and dest orientation 
         # must be in range of 360 degrees or 2pi
         pi2 = 2 * math.pi
         angle_diff = (self.orientation - dest_orient) % pi2
+
         # force into the range of 0 - 2pi
         angle_diff = (angle_diff + pi2) % pi2
+
         # Adjust to range of -pi to pi
         if (angle_diff > math.pi):
             angle_diff -= pi2
-        
-        #----get the turn angle, direction for min turning - can add stuff to finnesse later 
-        turn_angle = angle_diff 
 
-        #----orient to destination 
+        # choose sign for angle 
+        if angle_diff < 0:
+            return -angle_diff
+
+        # get the turn angle, direction for min turning - can add stuff to finnesse later 
+        turn_angle = angle_diff * min(angle_diff * 5, math.radians(30))
+
+        # orient to destination 
         move_cmd.angular.z = turn_angle
         
         destination_dist = dist(self.position, goal_pos)
-        #print "destination dist %s" % destination_dist
+    
         # set movement speed tp destination
         move_cmd.linear.x = min(0.3, destination_dist*0.2)
 
@@ -387,7 +389,7 @@ class B2_Test:
                 self.lobstacle = False
 
             else:
-                self.updateMapFree(self.positionToMap(self.position))
+                #self.updateMapFree(self.positionToMap(self.position))
                 move_cmd.linear.x = self.lin_speed
                 move_cmd.angular.z = 0
 
@@ -550,7 +552,7 @@ class B2_Test:
 
 if __name__ == '__main__':
     # try:
-    robot = B2_Test()
+    robot = Integ_Test()
     robot.wander()
     # except Exception, err:
     #     rospy.loginfo("DepthScan node terminated.")

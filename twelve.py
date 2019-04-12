@@ -4,23 +4,29 @@ Makes basic map
 """
 
 
-import rospy
+
 import random
 import math
+import time
 from math import radians, degrees
-import cv2
 import numpy as np
-from geometry_msgs.msg import Twist
+import time
+import cv2
 import tf
+from geometry_msgs.msg import Twist
+import rospy
 from kobuki_msgs.msg import BumperEvent, CliffEvent, WheelDropEvent
 from geometry_msgs.msg import PoseWithCovarianceStamped, Point, Quaternion, PointStamped
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import Empty
 
+# local imports
 import map_util as mp
-import numpy as np
-import time
+import integ 
+
+
+
 
 
 
@@ -64,6 +70,13 @@ class B1_Wander_Test:
          # initialize MapDrawer object
         self.mapObj = mp.MapDrawer(self.positionToMap)
 
+        # initialize frontier object from functions defined in integ.py
+        self.frontierObj = integ.Integ_Test()
+        # teach the frontier object about the current map 
+        self.frontier0bj.position = self.position
+        self.frontier0bj.my_map = self.my_map
+                    
+
         # create blank array of negative ones to represent blank map 
         self.my_map = -np.ones((40,30))
 
@@ -76,7 +89,7 @@ class B1_Wander_Test:
         # Orientation is the rotation in the floor plane from initial pose
         self.orientation = None
 
-        # handle obstacles and bumps
+        # avoid obstacles and react to bumps
         self.obstacle_pos = [0, 0]
         self.obstacle = False
 
@@ -175,38 +188,41 @@ class B1_Wander_Test:
         """ update map with position of obstacle using depth sensor model """
         world_map_ratio = 0.2
 
-        if self.obstacle_depth > 0:
-            # "width" of obstacle in world space 
-            width_obs = self.obstacle_depth * np.tan(np.deg2rad(30))
-            print "width obs %s" % width_obs
+        if self.obstacle_depth <= 0:
+            print "obstacle depth is 0, need to figure out why"
+            self.obstacle_depth = 1
 
-            # position of obstacle relative to current position in world space 
-            obs_x = self.position[0] + self.obstacle_depth
-            obs_y = self.position[1] + width_obs
-            obs_world = [obs_x, obs_y]
-            print "position currently world %d, %d" % (self.position[0], self.position[1])
-            print "world obs pos %s" % obs_world
+        # "width" of obstacle in world space 
+        width_obs = self.obstacle_depth * np.tan(np.deg2rad(30))
+        print "width obs %s" % width_obs
 
-            # convert the obstacle postion and current position to map space 
-            obs_map = self.positionToMap(obs_world)
-            curr_map = self.positionToMap(self.position)
-            print "position of obs_map %f, %f" % (obs_map[0], obs_map[1])
-            print "position currently in map %f, %f" % (curr_map[0], curr_map[1])
+        # position of obstacle relative to current position in world space 
+        obs_x = self.position[0] + self.obstacle_depth
+        obs_y = self.position[1] + width_obs
+        obs_world = [obs_x, obs_y]
+        print "position currently world %d, %d" % (self.position[0], self.position[1])
+        print "world obs pos %s" % obs_world
 
-            # want to say that the proportional line in the y-direction from the obstacle is the "width" of the obstacle
-            width_obs_map = width_obs/world_map_ratio
-            print "width_obs_map %s" % width_obs_map 
+        # convert the obstacle postion and current position to map space 
+        obs_map = self.positionToMap(obs_world)
+        curr_map = self.positionToMap(self.position)
+        print "position of obs_map %f, %f" % (obs_map[0], obs_map[1])
+        print "position currently in map %f, %f" % (curr_map[0], curr_map[1])
 
-            # mark the obstacle position as occupied 
-            self.my_map[obs_map[0], obs_map[1]] = 1
+        # want to say that the proportional line in the y-direction from the obstacle is the "width" of the obstacle
+        width_obs_map = width_obs/world_map_ratio
+        print "width_obs_map %s" % width_obs_map 
 
-            # mark the "width" of the obstacle as occupied 
-            for i in range(0, int(width_obs_map + 2)):
-                self.my_map[obs_map[0], obs_map[1] - i] = 1
+        # mark the obstacle position as occupied 
+        self.my_map[obs_map[0], obs_map[1]] = 1
 
-            # update the map, relative to my current position and show for a small time%%% orientation? 
-            self.mapObj.UpdateMapDisplay(self.my_map, curr_map)
-            time.sleep(0.0000001)
+        # mark the "width" of the obstacle as occupied 
+        for i in range(0, int(width_obs_map + 2)):
+            self.my_map[obs_map[0], obs_map[1] - i] = 1
+
+        # update the map, relative to my current position and show for a small time%%% orientation? 
+        self.mapObj.UpdateMapDisplay(self.my_map, curr_map)
+        time.sleep(0.0000001)
       
     def wander(self):
         """
@@ -218,6 +234,22 @@ class B1_Wander_Test:
         self.state = 'forward'
         self.state_change_time = rospy.Time.now()
         printed_position = False
+        
+
+        # the current time
+        now = rospy.Time.now()
+
+        # a duration of 180s 
+        time_ago = now - rospy.Duration(180)
+
+        # stop after a given time duration of 180s
+        if (now > time_ago):
+            move_cmd.linear.x = 0
+            move_cmd.angular.z = 0
+            self.mapObj.SaveMap("saved_map.png", self.position)
+            print " times up! "
+
+        
 
         move_cmd = Twist()
         backwards = Twist()
@@ -242,6 +274,9 @@ class B1_Wander_Test:
         lobstacle.linear.x = 0
         lobstacle.angular.z = (-radians(45))
 
+        # counter because only want to look for frontiers sometimes
+        counter = 0
+
         while not rospy.is_shutdown():
             # handle bumps
             # if (data.state == BumperEvent.PRESSED):
@@ -254,7 +289,6 @@ class B1_Wander_Test:
 
             while(self.robstacle):
                 rospy.loginfo("RIGHT OBSTACLE")                        
-
 
                 for i in range (0, 2):
                     self.cmd_vel.publish(robstacle)
@@ -271,13 +305,29 @@ class B1_Wander_Test:
                 self.lobstacle = False
 
             else:
+                # robot is in free space - show the map
                 self.updateMapFree()
-                move_cmd.linear.x = self.lin_speed
-                move_cmd.angular.z = 0
+
+                # want the robot to get acclimated before looking for frontiers 
+                counter+=1
+                if (counter > 4):
+                    # let the frontier explorer decide the next move
+                    print "frontier explorin"
+                    move_cmd = self.frontierObj.nextMove()
+
+                else:
+                    # give robot a regular speed 
+                    move_cmd.linear.x = self.lin_speed
+                    move_cmd.angular.z = 0
 
                 # publish the velocity
                 self.cmd_vel.publish(move_cmd)
                 self.rate.sleep()
+
+                
+
+
+
 
    
    

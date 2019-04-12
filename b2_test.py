@@ -190,8 +190,8 @@ class B2_Test:
 
     def updateMapOccupied(self):
         # update map with position of obstacle and knowledge that that position will be occupied 
-        print "hello"
-        print self.position
+        #print "hello"
+        #print self.position
         current_pos = self.position
         current_orr = self.orientation
         obstacle_pos = self.obstacle_pos
@@ -254,16 +254,17 @@ class B2_Test:
                 rospy.sleep(1)
                 self.obstacle = True
                 rospy.loginfo("RIGHT BUMP")
-                print "POSITION IS HEREEEEE %s" % self.position
+                #print "POSITION IS HEREEEEE %s" % self.position
 
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + .25*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + .25*np.sin(float(self.orientation)))
-                    print self.obstacle_pos
-                    self.updateMapOccupied()
+                    self.obstacle_pos[1] = int(float(self.position[1]) - .25*np.sin(float(self.orientation)))
+                    # print self.obstacle_pos
                     for x in range(int(self.position[0]), self.obstacle_pos[0]):
                         for y in range(self.obstacle_pos[1], int(self.position[1])):
                             self.updateMapFree((x, y))
+                    self.updateMapOccupied()
+                    print "robot pos: %s obstacle pos: %s" % self.position, self.obstacle_pos
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
                     self.rate.sleep()
@@ -284,15 +285,15 @@ class B2_Test:
 
 
             while(self.robstacle):
-                print "check1"
                 rospy.loginfo("OBSTACLE")
                 print "self.obstacle %s" % self.obstacle_depth                      
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
+                    self.obstacle_pos[1] = int(float(self.position[1]) - self.obstacle_depth*np.sin(float(self.orientation)))
                     for x in range(int(self.position[0]), self.obstacle_pos[0]):
                         for y in range(self.obstacle_pos[1], int(self.position[1])):
                             self.updateMapFree((x, y))
+                    print "robot pos: %s obstacle pos: %s" % self.position, self.obstacle_pos
                     self.updateMapOccupied()
 
 
@@ -306,10 +307,11 @@ class B2_Test:
                 rospy.loginfo("LEFT OBSTACLE")
                 if (not(math.isnan(self.orientation)) and not(math.isnan(self.position[0])) and not(math.isnan(self.position[1]))):
                     self.obstacle_pos[0] = int(float(self.position[0]) + self.obstacle_depth*np.cos(float(self.orientation)))
-                    self.obstacle_pos[1] = int(float(self.position[1]) + self.obstacle_depth*np.sin(float(self.orientation)))
+                    self.obstacle_pos[1] = int(float(self.position[1]) - self.obstacle_depth*np.sin(float(self.orientation)))
                     for x in range(int(self.position[0]), self.obstacle_pos[0]):
                         for y in range(self.obstacle_pos[1], int(self.position[1])):
                             self.updateMapFree((x, y))
+                    print "robot pos: %s obstacle pos: %s" % self.position, self.obstacle_pos
                     self.updateMapOccupied()
                             
 

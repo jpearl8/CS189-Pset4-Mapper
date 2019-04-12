@@ -345,6 +345,13 @@ class B1_Wander_Test:
             max_contour = contours[max_index]
             new_obstacle_pos = centroid(max_contour)
 
+            # show where largest obstacle is 
+            cv2.drawContours(img, max_contour, -1, color=(0, 255, 0), thickness=3)
+
+            # get area of largest obstacle 
+            obstacle_area = areas[max_index]
+            print "obstacle_area %s" % obstacle_area
+
             # Draw rectangle bounding box on image
             # Differentiate between left and right objects
             x, y, w, h = cv2.boundingRect(max_contour)

@@ -105,37 +105,37 @@ class Integ_Test:
         self.position = None
         self.orientation = None
 
-        # # Initiliaze
-        # rospy.init_node('Basic_Map', anonymous=False)
+        # Initiliaze
+        rospy.init_node('Basic_Map', anonymous=False)
 
-        # # Tell user how to stop TurtleBot
-        # rospy.loginfo("To stop TurtleBot CTRL + C")
-        # # What function to call when you ctrl + c    
-        # rospy.on_shutdown(self.shutdown)
+        # Tell user how to stop TurtleBot
+        rospy.loginfo("To stop TurtleBot CTRL + C")
+        # What function to call when you ctrl + c    
+        rospy.on_shutdown(self.shutdown)
 
 
         
         # Create a publisher which can "talk" to TurtleBot wheels and tell it to move
         self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi',Twist, queue_size=10)
 
-        # # Subscribe to queues for receiving sensory data
-        # rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
+        # Subscribe to queues for receiving sensory data
+        rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.process_bump_sensing)
 
-        # # Use a CvBridge to convert ROS image type to CV Image (Mat)
-        # self.bridge = CvBridge()
-        # # Subscribe to depth topic
-        # rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
+        # Use a CvBridge to convert ROS image type to CV Image (Mat)
+        self.bridge = CvBridge()
+        # Subscribe to depth topic
+        rospy.Subscriber('/camera/depth/image', Image, self.process_depth_image, queue_size=1, buff_size=2 ** 24)
 
         
-        # # Subscribe to robot_pose_ekf for odometry/position information
-        # rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
+        # Subscribe to robot_pose_ekf for odometry/position information
+        rospy.Subscriber('/robot_pose_ekf/odom_combined', PoseWithCovarianceStamped, self.process_ekf)
 
         # Set up the odometry reset publisher (publishing Empty messages here will reset odom)
         reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=1)
         # Reset odometry (these messages take about a second to get through)
-        # timer = rospy.Time.now()
-        # while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
-        #     reset_odom.publish(Empty())
+        timer = rospy.Time.now()
+        while rospy.Time.now() - timer < rospy.Duration(1) or self.position is None:
+            reset_odom.publish(Empty())
         # TurtleBot will stop if we don't keep telling it to move.  How often should we tell it to move? 5 Hz
         self.rate = rospy.Rate(5)
 
@@ -173,7 +173,7 @@ class Integ_Test:
 
     def updateMapFree(self, current_pos_map):
         current_pos = self.positionFromMap(current_pos_map)
-        print "current pos in map %s" % current_pos
+        # print "current pos in map %s" % current_pos
 
         # check that current pos in the map is within the bounds
         if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):

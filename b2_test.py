@@ -56,6 +56,15 @@ def centroid(contour):
 
         return centroid_x(contour), centroid_y(contour)
 
+def dist(pos1, pos2):
+    """
+    Get cartesian distance between the (x, y) positions
+    :param pos1: (x, y) position 1
+    :param pos2: (x, y) position 2
+    :return: Distance (float)
+    """
+    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
+
 
 
 class B2_Test:

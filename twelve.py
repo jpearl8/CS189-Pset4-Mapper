@@ -25,6 +25,14 @@ from std_msgs.msg import Empty
 import map_util as mp
 import integ 
 
+def dist(pos1, pos2):
+    """
+    Get cartesian distance between the (x, y) positions
+    :param pos1: (x, y) position 1
+    :param pos2: (x, y) position 2
+    :return: Distance (float)
+    """
+    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
 
 
 
@@ -204,7 +212,7 @@ class B1_Wander_Test:
 
         # choose sign for angle 
         if angle_diff < 0:
-            return -angle_diff
+            angle_diff = -angle_diff
 
         # get the turn angle, direction for min turning - can add stuff to finnesse later 
         turn_angle = angle_diff * min(angle_diff * 5, math.radians(30))
@@ -312,12 +320,13 @@ class B1_Wander_Test:
         self.state_change_time = rospy.Time.now()
         printed_position = False
         
+        move_cmd = Twist()
 
         # a duration of 180s 
-        time_ago = timer - rospy.Duration(180)
+        time_ago = rospy.Time.now() - rospy.Duration(180)
 
         # stop after a given time duration of 180s
-        if (now > time_ago):
+        if (rospy.Time.now() > time_ago):
             move_cmd.linear.x = 0
             move_cmd.angular.z = 0
             self.mapObj.SaveMap("saved_map.png", self.position)
@@ -325,7 +334,7 @@ class B1_Wander_Test:
 
         
 
-        move_cmd = Twist()
+       
         backwards = Twist()
 
         lobstacle = Twist()
@@ -387,7 +396,7 @@ class B1_Wander_Test:
                 if (counter > 4):
                     # let the frontier explorer decide the next move
                     print "frontier explorin"
-                    move_cmd = nextMove()
+                    move_cmd = self.nextMove()
 
                 else:
                     # give robot a regular speed 

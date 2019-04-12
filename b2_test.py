@@ -141,6 +141,18 @@ class B2_Test:
         
         return (step_x + 2, step_y + 15)
 
+    def positionFromMap(self, position):
+        """
+        turn map positions back to EKF for display purposes
+        """
+        world_map_ratio = 0.2
+
+        step_x = (position[0] - 2) * world_map_ratio
+        step_y = (position[1] - 15) * world_map_ratio
+        
+        return (step_x, step_y)
+
+
     def initializeMap(self):
         # first map update, need to do twice because it doesn't show up nicely the first time .p
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
@@ -157,10 +169,10 @@ class B2_Test:
 
         print "free"
         current_orr = self.orientation
-
+        current_pos = self.positionFromMap(current_pos_map)
 
         # check that current pos in the map is within the bounds
-        if (current_pos_map[0] <= 300 and current_pos_map[0] >= 0 and current_pos_map[1] <= 400 and current_pos_map[1] >= 0):
+        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
                 # if the current position is ok, set it to be free and update and show the map 
                 self.my_map[current_pos_map[0], current_pos_map[1]] = 0
                 self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0

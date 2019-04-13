@@ -24,6 +24,9 @@ import map_util as mp
 import numpy as np
 import time
 
+FLOOR_HEIGHT = 100  # bottom pixels of img to ignore
+NUM_SEGMENTS = 3  # Number of segments to divide the depth image into
+
 def dist(pos1, pos2):
     """
     Get cartesian distance between the (x, y) positions
@@ -88,7 +91,7 @@ class Integ_Test:
         self.obstacle_depth = -1
         self.obstacle_pos = [0, 0]
         self.obstacle = False
-        self.obstalce_rec = [0, 0, 0, 0]
+
 
         # speed and radians for turns set here
         self.lin_speed = 0.2  # m/s
@@ -100,6 +103,9 @@ class Integ_Test:
 
         self.lobstacle = False
         self.robstacle = False
+
+        # section based on obstacles
+        self.sec_depth = [-1, -1, -1, -1, -1, -1]
 
         self.paused = False
         self.position = None
@@ -142,6 +148,7 @@ class Integ_Test:
     def positionToMap(self, position):
         """
         turn EKF position in meters into map position in coordinates
+        (r, c) -> (x, y) With the robot starting facing the positive x axis
         """
         # ratio of world meters to map coordinates 
         world_map_ratio = 0.2
@@ -154,6 +161,7 @@ class Integ_Test:
     def positionFromMap(self, position):
         """
         turn map positions back to EKF for display purposes
+        (x, y) -> (r c)
         """
         world_map_ratio = 0.2
 
@@ -172,6 +180,10 @@ class Integ_Test:
 
 
     def updateMapFree(self, current_pos_map):
+        """
+        Takes a (x, y) as a parameter.
+        Calling UpdateMapDisplay on (r, c)
+        """
         current_pos = self.positionFromMap(current_pos_map)
         # print "current pos in map %s" % current_pos
 
@@ -189,10 +201,14 @@ class Integ_Test:
             print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
 
     def updateMapOccupied(self):
+        """
+        self.obstacle_pos is in (x, y)
+        self.position is in (r, c)
+        """
         # update map with position of obstacle and knowledge that that position will be occupied 
         current_pos = self.position
         current_orr = self.orientation
-        obstacle_orr = self.orientation
+        obstacle_orr = self.orientation # to be changed
         current_pos_map = self.positionToMap(current_pos)
         obstacle_pos_map = self.obstacle_pos
         
@@ -212,16 +228,15 @@ class Integ_Test:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
-    def freeLoop(self):
+    def freeLoop(self, i):
         (pos_x, pos_y) = self.positionToMap(self.position)
         print "robot position: x: %d y: %d" % (pos_x, pos_y)
         
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
             print "depth: %d" % (self.obstacle_depth)
             print "orientation %d" % (self.orientation)
-            self.obstacle_pos[0] = int(pos_x + self.obstacle_depth*np.cos(self.orientation))
-            
-            self.obstacle_pos[1] = int(pos_y + self.obstacle_depth*np.sin(self.orientation))
+            self.obstacle_pos[0] = int(pos_x + abs(self.obstacle_depth[i])*np.cos(self.orientation + radians(75 - 30*i)))
+            self.obstacle_pos[1] = int(pos_y + abs(self.obstacle_depth[i])*np.sin(self.orientation + radians(75 - 30*i)))
             print "obstacle position: x: %d y: %d" % (self.obstacle_pos[0], self.obstacle_pos[1])
 
             obs_pos_x = True
@@ -245,7 +260,8 @@ class Integ_Test:
                     else:
                         y1 = self.obstacle_pos[1] + y
                     self.updateMapFree((x1, y1))
-            self.updateMapOccupied()  
+            if (self.obstacle_depth != -1):
+                self.updateMapOccupied()  
 
     def closest_num(self, my_arr, my_int):
         "find the number in array that is closes to a given number"
@@ -336,6 +352,10 @@ class Integ_Test:
 
         move_cmd = Twist()
         backwards = Twist()
+        turn = Twist()
+
+        turn.linear.x = 0
+        turn.angular.z = radians(90)
 
         lobstacle = Twist()
         robstacle = Twist()
@@ -355,8 +375,6 @@ class Integ_Test:
         lobstacle.angular.z = (-radians(45))
 
         while not rospy.is_shutdown():
-            
-
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
                 self.obstacle = True
@@ -379,40 +397,47 @@ class Integ_Test:
                 self.crbump = False
                 self.lbump = False
 
+            # turning 90 in each direction and surveying
+            for i in range(4):
+                self.cmd_vel.publish(turn_left)
+                self.rate.sleep()
+                for i in range(6):
+                    self.freeLoop(i)
+
+            
+
+            # while(self.robstacle):
+            #     self.freeLoop()                    
+            #     for i in range (0, 2):
+            #         self.cmd_vel.publish(robstacle)
+            #         self.rate.sleep()
+            #         rospy.sleep(.5)
+            #     self.robstacle = False
+
+            # while(self.lobstacle):
+            #     self.freeLoop()
+            #     for i in range (0, 2):
+            #         self.cmd_vel.publish(lobstacle)
+            #         self.rate.sleep()
+            #         rospy.sleep(.5)
+            #     self.lobstacle = False
+
+            # else:
+            #     self.updateMapFree(self.positionToMap(self.position))
+            #     move_cmd.linear.x = self.lin_speed
+            #     move_cmd.angular.z = 0
 
 
-            while(self.robstacle):
-                self.freeLoop()                    
-                for i in range (0, 2):
-                    self.cmd_vel.publish(robstacle)
-                    self.rate.sleep()
-                    rospy.sleep(.5)
-                self.robstacle = False
+            # # publish the velocity
+            # self.cmd_vel.publish(move_cmd)
+            # self.rate.sleep()
 
-            while(self.lobstacle):
-                self.freeLoop()
-                for i in range (0, 2):
-                    self.cmd_vel.publish(lobstacle)
-                    self.rate.sleep()
-                    rospy.sleep(.5)
-                self.lobstacle = False
-
-            else:
-                self.updateMapFree(self.positionToMap(self.position))
-                move_cmd.linear.x = self.lin_speed
-                move_cmd.angular.z = 0
-
-
-            # publish the velocity
-            self.cmd_vel.publish(move_cmd)
-            self.rate.sleep()
-
-            # if this code works lol 
-            # for i in range (0, 5):
-            #     print "MOVING IN MAIN"
-            #     move_cmd = self.nextMove()
-            #     self.cmd_vel.publish(move_cmd)
-            #     self.rate.sleep()
+            # # if this code works lol 
+            # # for i in range (0, 5):
+            # #     print "MOVING IN MAIN"
+            # #     move_cmd = self.nextMove()
+            # #     self.cmd_vel.publish(move_cmd)
+            # #     self.rate.sleep()
 
             
 
@@ -445,33 +470,28 @@ class Integ_Test:
         :return: Image with bounding box
         """
         img = np.copy(img_in)
-
+        img_height, img_width = img.shape[:2]
         # Get contours
-        contours, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        if len(contours) > 0:
-            # Find the largest contour
-            areas = [cv2.contourArea(c) for c in contours]
-            max_index = np.argmax(areas)
-            max_contour = contours[max_index]
-            new_obstacle_pos = centroid(max_contour)
-
-            # Draw rectangle bounding box on image
-            # Differentiate between left and right objects
-            x, y, w, h = cv2.boundingRect(max_contour)
-            if (w*h > 200):
-                if (x < 160):
-                    self.lobstacle = True
+        for i in range(6):
+            sec_im = np.copy(img)
+            sec_im[:, i*img_width/NUM_SEGMENTS:(i+1)*img_width/NUM_SEGMENTS] = 0
+            sec_im = cv2.bitwise_and(sec_im, sec_im, mask=mask)
+            contours, _ = cv2.findContours(sec_im, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            if len(contours) > 0:
+                areas = [cv2.contourArea(c) for c in contours]
+                max_index = np.argmax(areas)
+                max_contour = contours[max_index]
+                new_obstacle_pos = centroid(max_contour)
+                if new_obstacle_pos:
+                    self.sec_depth[i] = 5*(self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]]) 
+                    if (self.sec_depth[i] == 0):
+                        self.sec_depth[i] = -1
                 else:
-                    self.robstacle = True
-
-            cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
+                    self.sec_depth[i] = -1
+                x, y, w, h = cv2.boundingRect(max_contour)
+                cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
             
-            if new_obstacle_pos:
-                self.obstacle_depth =  5*(self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]]) 
-
-
-
-
+            
         return img
 
     def process_depth_image(self, data):
@@ -486,9 +506,8 @@ class Integ_Test:
 
             mask = cv2.inRange(cv_image, 0.1, 1)
             
+            # TODO: try mask[: -FLOOR_HEIGHT, :]
             mask[400:, :] = 0
-            mask[:, 0:200] = 0
-            mask[:, 440:] = 0
             im_mask = cv2.bitwise_and(cv_image, cv_image, mask=mask)
             self.depth_image = im_mask
             dst2 = self.bound_object(mask)
@@ -498,8 +517,8 @@ class Integ_Test:
 
             # Display the thresholded depth image
             # Normalize values to range between 0 and 1 for displaying
-            norm_img = im_mask
-            cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
+            # norm_img = im_mask
+            # cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
     # not necessary
 
             # Displays thresholded depth image   

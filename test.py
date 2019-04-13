@@ -197,6 +197,7 @@ class Integ_Test:
         obstacle_pos_map = self.obstacle_pos
         
 
+
         # check that obstacle pos in the map is ok
         if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
                 # if the obstacle position is ok, set it to be occupied
@@ -216,6 +217,8 @@ class Integ_Test:
         print "robot position: x: %d y: %d" % (pos_x, pos_y)
         
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
+            print "depth: %d" % (self.obstacle_depth)
+            print "orientation %d" % (self.orientation)
             self.obstacle_pos[0] = int(pos_x + self.obstacle_depth*np.cos(self.orientation))
             
             self.obstacle_pos[1] = int(pos_y + self.obstacle_depth*np.sin(self.orientation))
@@ -464,7 +467,7 @@ class Integ_Test:
             cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
             
             if new_obstacle_pos:
-                self.obstacle_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
+                self.obstacle_depth =  5*(self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]]) 
 
 
 

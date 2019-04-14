@@ -233,8 +233,8 @@ class Integ_Test:
         print "robot position: x: %d y: %d" % (pos_x, pos_y)
         
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
-            print "depth: %d" % (self.obstacle_depth)
-            print "orientation %d" % (self.orientation)
+            print "depth: %d" % (self.obstacle_depth[i])
+            print "calculated orientation %d" % (self.orientation + radians(75 - 30*i)))
             self.obstacle_pos[0] = int(pos_x + abs(self.obstacle_depth[i])*np.cos(self.orientation + radians(75 - 30*i)))
             self.obstacle_pos[1] = int(pos_y + abs(self.obstacle_depth[i])*np.sin(self.orientation + radians(75 - 30*i)))
             print "obstacle position: x: %d y: %d" % (self.obstacle_pos[0], self.obstacle_pos[1])
@@ -399,10 +399,14 @@ class Integ_Test:
 
             # turning 90 in each direction and surveying
             for i in range(4):
+                print "survey %d" % (i)
                 self.cmd_vel.publish(turn_left)
                 self.rate.sleep()
-                for i in range(6):
-                    self.freeLoop(i)
+                print "we just turned left"
+                for j in range(6):
+                    print "section %d" % (j)
+                    self.freeLoop(j)
+
 
             
 

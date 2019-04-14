@@ -164,7 +164,7 @@ class Integ_Test:
         turn map positions back to EKF for display purposes
         (x, y) -> (r c)
         """
-        world_map_ratio = 0.2
+        
 
         step_x = (position[0] - 2) * world_map_ratio
         step_y = (position[1] - 15) * world_map_ratio
@@ -231,24 +231,24 @@ class Integ_Test:
 
     def freeLoop(self, i):
         (pos_x, pos_y) = self.positionToMap(self.position)
-        print "robot position: x: %d y: %d" % (pos_x, pos_y)
-        
+        #print "robot position: x: %d y: %d" % (pos_x, pos_y)
+        rospy.sleep(.001)
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
-            print "depth: %d" % (self.sec_depth[i])
-            print "calculated orientation %d" % (self.orientation + radians(80 - 40*i))
-            self.obstacle_pos[0] = int(pos_x + abs(self.sec_depth[i])*np.cos(self.orientation + radians(80 - 40*i)))
-            self.obstacle_pos[1] = int(pos_y + abs(self.sec_depth[i])*np.sin(self.orientation + radians(80 - 40*i)))
-            print "obstacle position: x: %d y: %d" % (self.obstacle_pos[0], self.obstacle_pos[1])
+         #   print "depth: %s" % (self.sec_depth[i])
+          #  print "calculated orientation %s" % (self.orientation + radians(80 - 40*i))
+            self.obstacle_pos[0] = int(pos_x + abs(self.sec_depth[i])*np.cos(self.orientation + radians(60 - 30*i)))
+            self.obstacle_pos[1] = int(pos_y + abs(self.sec_depth[i])*np.sin(self.orientation + radians(60 - 30*i)))
+           # print "obstacle position: x: %s y: %s" % (self.obstacle_pos[0], self.obstacle_pos[1])
 
             obs_pos_x = True
             obs_pos_y = True
             x1 = 0
             y1 = 0
             if (pos_x > self.obstacle_pos[0]):
-                print "object behind"
+               #print "object behind"
                 obs_pos_x = False
             if (pos_y > self.obstacle_pos[1]):
-                print "object to the right"
+                #print "object to the right"
                 obs_pos_y = False
             for x in range(0, int(abs(pos_x - self.obstacle_pos[0]))):
                 for y in range(0, int(abs(self.obstacle_pos[1] - pos_y))):
@@ -261,8 +261,13 @@ class Integ_Test:
                     else:
                         y1 = self.obstacle_pos[1] + y
                     self.updateMapFree((x1, y1))
+                    rospy.sleep(.000001)
             if (self.sec_depth[i] != -1):
-                self.updateMapOccupied()  
+                self.updateMapOccupied() 
+                rospy.sleep(.000001)
+            else:
+                self.updateMapFree((self.obstacle_pos[0], self.obstacle_pos[1])) 
+                rospy.sleep(.000001)
 
     def closest_num(self, my_arr, my_int):
         "find the number in array that is closes to a given number"
@@ -356,7 +361,7 @@ class Integ_Test:
         turn = Twist()
 
         turn.linear.x = 0
-        turn.angular.z = radians(90)
+        turn.angular.z = radians(180)
 
         lobstacle = Twist()
         robstacle = Twist()
@@ -406,13 +411,18 @@ class Integ_Test:
                 #self.cmd_vel.publish(turn)
                 #self.rate.sleep()
             else:
-
-                self.rate.sleep()
-                for j in range(NUM_SEGMENTS):
-                    self.rate.sleep()
-                    print "section %d" % (j)
-                    self.freeLoop(j)
-                self.rate.sleep()
+                for i in range(4):
+                    # self.cmd_vel.publish(turn)
+                    print "turned"
+                    rospy.sleep(.001)
+                    for j in range(NUM_SEGMENTS):
+                        self.rate.sleep()
+                        #print "section %d" % (j)
+                        self.freeLoop(j)
+                        print "mapped a segment"
+                    rospy.sleep(.001)
+                # for i in range(2):
+                #     self.cmd_vel.publish(move_cmd)
 
             
 
@@ -486,7 +496,8 @@ class Integ_Test:
         # Get contours
         for i in range(NUM_SEGMENTS):
             sec_im = np.copy(img)
-            sec_im[:-FLOOR_HEIGHT, i*img_width/NUM_SEGMENTS:(i+1)*img_width/NUM_SEGMENTS] = 0
+            
+            sec_im[:, i*(img_width/NUM_SEGMENTS):(i+1)*(img_width/NUM_SEGMENTS)] = 0
             #sec_im = cv2.bitwise_and(sec_im, sec_im, mask=sec_im)
             contours, _ = cv2.findContours(sec_im, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             if len(contours) > 0:
@@ -495,9 +506,9 @@ class Integ_Test:
                 max_contour = contours[max_index]
                 new_obstacle_pos = centroid(max_contour)
                 if new_obstacle_pos:
-                    #print "obs pos (h, w) (%d, %d)" % (new_obstacle_pos[0], new_obstacle_pos[1])
-
-                    self.sec_depth[i] = (self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]])/world_map_ratio 
+                   # print "obs pos (h, w) (%d, %d)" % (new_obstacle_pos[0]-200, new_obstacle_pos[1])
+                    
+                    self.sec_depth[i] = (self.depth_image[new_obstacle_pos[0]-200][new_obstacle_pos[1]])/world_map_ratio 
                     if (self.sec_depth[i] == 0):
                         self.sec_depth[i] = -1
                 else:
@@ -521,7 +532,7 @@ class Integ_Test:
             mask = cv2.inRange(cv_image, 0.1, 1)
             
             # TODO: try mask[: -FLOOR_HEIGHT, :]
-            mask[:-FLOOR_HEIGHT, :] = 0
+            mask[ 400:, :] = 0
             im_mask = cv2.bitwise_and(cv_image, cv_image, mask=mask)
             self.depth_image = im_mask
             dst2 = self.bound_object(mask)
@@ -536,7 +547,7 @@ class Integ_Test:
     # not necessary
 
             # Displays thresholded depth image   
-           # cv2.imshow('Depth Image', norm_img)    
+            cv2.imshow('Depth Image', norm_img)    
             cv2.waitKey(3)
         except CvBridgeError, err:
             rospy.loginfo(err)

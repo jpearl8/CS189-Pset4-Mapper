@@ -234,10 +234,10 @@ class Integ_Test:
         print "robot position: x: %d y: %d" % (pos_x, pos_y)
         
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
-            print "depth: %d" % (self.obstacle_depth[i])
-            print "calculated orientation %d" % (self.orientation + radians(80 - 40*i)))
-            self.obstacle_pos[0] = int(pos_x + abs(self.obstacle_depth[i])*np.cos(self.orientation + radians(80 - 40*i)))
-            self.obstacle_pos[1] = int(pos_y + abs(self.obstacle_depth[i])*np.sin(self.orientation + radians(80 - 40*i)))
+            print "depth: %d" % (self.sec_depth[i])
+            print "calculated orientation %d" % (self.orientation + radians(80 - 40*i))
+            self.obstacle_pos[0] = int(pos_x + abs(self.sec_depth[i])*np.cos(self.orientation + radians(80 - 40*i)))
+            self.obstacle_pos[1] = int(pos_y + abs(self.sec_depth[i])*np.sin(self.orientation + radians(80 - 40*i)))
             print "obstacle position: x: %d y: %d" % (self.obstacle_pos[0], self.obstacle_pos[1])
 
             obs_pos_x = True
@@ -261,7 +261,7 @@ class Integ_Test:
                     else:
                         y1 = self.obstacle_pos[1] + y
                     self.updateMapFree((x1, y1))
-            if (self.obstacle_depth != -1):
+            if (self.sec_depth[i] != -1):
                 self.updateMapOccupied()  
 
     def closest_num(self, my_arr, my_int):
@@ -379,7 +379,8 @@ class Integ_Test:
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
                 self.obstacle = True
-                self.obstacle_depth = .25
+                self.sec_depth = .25
+                #need to make sure freeLoop works for bumps too!!!
                 self.freeLoop()
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
@@ -399,15 +400,19 @@ class Integ_Test:
                 self.lbump = False
 
             # turning 90 in each direction and surveying
-            for i in range(4):
-                print "survey %d" % (i)
-                self.cmd_vel.publish(turn_left)
+           # for i in range(4):
+                #print "survey %d" % (i)
+
+                #self.cmd_vel.publish(turn)
+                #self.rate.sleep()
+            else:
+
                 self.rate.sleep()
-                print "we just turned left"
                 for j in range(NUM_SEGMENTS):
+                    self.rate.sleep()
                     print "section %d" % (j)
                     self.freeLoop(j)
-
+                self.rate.sleep()
 
             
 
@@ -475,12 +480,14 @@ class Integ_Test:
         :return: Image with bounding box
         """
         img = np.copy(img_in)
+
         img_height, img_width = img.shape[:2]
+
         # Get contours
         for i in range(NUM_SEGMENTS):
             sec_im = np.copy(img)
-            sec_im[:, i*img_width/NUM_SEGMENTS:(i+1)*img_width/NUM_SEGMENTS] = 0
-            sec_im = cv2.bitwise_and(sec_im, sec_im, mask=mask)
+            sec_im[:-FLOOR_HEIGHT, i*img_width/NUM_SEGMENTS:(i+1)*img_width/NUM_SEGMENTS] = 0
+            #sec_im = cv2.bitwise_and(sec_im, sec_im, mask=sec_im)
             contours, _ = cv2.findContours(sec_im, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             if len(contours) > 0:
                 areas = [cv2.contourArea(c) for c in contours]
@@ -488,6 +495,8 @@ class Integ_Test:
                 max_contour = contours[max_index]
                 new_obstacle_pos = centroid(max_contour)
                 if new_obstacle_pos:
+                    #print "obs pos (h, w) (%d, %d)" % (new_obstacle_pos[0], new_obstacle_pos[1])
+
                     self.sec_depth[i] = (self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]])/world_map_ratio 
                     if (self.sec_depth[i] == 0):
                         self.sec_depth[i] = -1
@@ -512,7 +521,7 @@ class Integ_Test:
             mask = cv2.inRange(cv_image, 0.1, 1)
             
             # TODO: try mask[: -FLOOR_HEIGHT, :]
-            mask[400:, :] = 0
+            mask[:-FLOOR_HEIGHT, :] = 0
             im_mask = cv2.bitwise_and(cv_image, cv_image, mask=mask)
             self.depth_image = im_mask
             dst2 = self.bound_object(mask)
@@ -522,12 +531,12 @@ class Integ_Test:
 
             # Display the thresholded depth image
             # Normalize values to range between 0 and 1 for displaying
-            # norm_img = im_mask
-            # cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
+            norm_img = im_mask
+            cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
     # not necessary
 
             # Displays thresholded depth image   
-            cv2.imshow('Depth Image', norm_img)    
+           # cv2.imshow('Depth Image', norm_img)    
             cv2.waitKey(3)
         except CvBridgeError, err:
             rospy.loginfo(err)

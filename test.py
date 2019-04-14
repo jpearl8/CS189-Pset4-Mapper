@@ -25,7 +25,8 @@ import numpy as np
 import time
 
 FLOOR_HEIGHT = 100  # bottom pixels of img to ignore
-NUM_SEGMENTS = 3  # Number of segments to divide the depth image into
+NUM_SEGMENTS = 5  # Number of segments to divide the depth image into
+world_map_ratio = 0.2 
 
 def dist(pos1, pos2):
     """
@@ -105,7 +106,7 @@ class Integ_Test:
         self.robstacle = False
 
         # section based on obstacles
-        self.sec_depth = [-1, -1, -1, -1, -1, -1]
+        self.sec_depth = [-1, -1, -1, -1, -1]
 
         self.paused = False
         self.position = None
@@ -151,7 +152,7 @@ class Integ_Test:
         (r, c) -> (x, y) With the robot starting facing the positive x axis
         """
         # ratio of world meters to map coordinates 
-        world_map_ratio = 0.2
+
 
         step_x = int(position[0]/world_map_ratio)
         step_y = int(position[1]/world_map_ratio)
@@ -234,9 +235,9 @@ class Integ_Test:
         
         if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
             print "depth: %d" % (self.obstacle_depth[i])
-            print "calculated orientation %d" % (self.orientation + radians(75 - 30*i)))
-            self.obstacle_pos[0] = int(pos_x + abs(self.obstacle_depth[i])*np.cos(self.orientation + radians(75 - 30*i)))
-            self.obstacle_pos[1] = int(pos_y + abs(self.obstacle_depth[i])*np.sin(self.orientation + radians(75 - 30*i)))
+            print "calculated orientation %d" % (self.orientation + radians(80 - 40*i)))
+            self.obstacle_pos[0] = int(pos_x + abs(self.obstacle_depth[i])*np.cos(self.orientation + radians(80 - 40*i)))
+            self.obstacle_pos[1] = int(pos_y + abs(self.obstacle_depth[i])*np.sin(self.orientation + radians(80 - 40*i)))
             print "obstacle position: x: %d y: %d" % (self.obstacle_pos[0], self.obstacle_pos[1])
 
             obs_pos_x = True
@@ -403,7 +404,7 @@ class Integ_Test:
                 self.cmd_vel.publish(turn_left)
                 self.rate.sleep()
                 print "we just turned left"
-                for j in range(6):
+                for j in range(NUM_SEGMENTS):
                     print "section %d" % (j)
                     self.freeLoop(j)
 
@@ -476,7 +477,7 @@ class Integ_Test:
         img = np.copy(img_in)
         img_height, img_width = img.shape[:2]
         # Get contours
-        for i in range(6):
+        for i in range(NUM_SEGMENTS):
             sec_im = np.copy(img)
             sec_im[:, i*img_width/NUM_SEGMENTS:(i+1)*img_width/NUM_SEGMENTS] = 0
             sec_im = cv2.bitwise_and(sec_im, sec_im, mask=mask)
@@ -487,7 +488,7 @@ class Integ_Test:
                 max_contour = contours[max_index]
                 new_obstacle_pos = centroid(max_contour)
                 if new_obstacle_pos:
-                    self.sec_depth[i] = 5*(self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]]) 
+                    self.sec_depth[i] = (self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]])/world_map_ratio 
                     if (self.sec_depth[i] == 0):
                         self.sec_depth[i] = -1
                 else:

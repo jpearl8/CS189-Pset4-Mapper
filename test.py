@@ -89,9 +89,12 @@ class Integ_Test:
         self.orientation = None
 
         # handle obstacles
+        self.obstacle_seen = [0, -1] # 0 for false, -1 for segment of obstacle
         self.obstacle_depth = -1
+        self.mapper.seg_depth = self.seg_depth = [-1, -1, -1, -1, -1]
         self.obstacle_pos = [0, 0]
         self.obstacle = False
+        self.obstacle_side = 'right'
 
 
         # speed and radians for turns set here
@@ -149,22 +152,21 @@ class Integ_Test:
     def positionToMap(self, position):
         """
         turn EKF position in meters into map position in coordinates
-        (r, c) -> (x, y) With the robot starting facing the positive x axis
+        (r, c) -> (x, y)
         """
-        # ratio of world meters to map coordinates 
-
+        
 
         step_x = int(position[0]/world_map_ratio)
         step_y = int(position[1]/world_map_ratio)
         
         return (step_x + 2, step_y + 15)
+    
 
     def positionFromMap(self, position):
         """
         turn map positions back to EKF for display purposes
         (x, y) -> (r c)
         """
-        
 
         step_x = (position[0] - 2) * world_map_ratio
         step_y = (position[1] - 15) * world_map_ratio
@@ -172,6 +174,7 @@ class Integ_Test:
         return (step_x, step_y)
 
     def initializeMap(self):
+        print "initialize map"
         # first map update, need to do twice because it doesn't show up nicely the first time .p
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
@@ -179,33 +182,62 @@ class Integ_Test:
         # show map for this amount of time 
         time.sleep(0.001)
 
-
     def updateMapFree(self, current_pos_map):
         """
         Takes a (x, y) as a parameter.
         Calling UpdateMapDisplay on (r, c)
         """
+        print "map free"
+        # update map with free position
         current_pos = self.positionFromMap(current_pos_map)
-        # print "current pos in map %s" % current_pos
 
         # check that current pos in the map is within the bounds
-        if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
-                # if the current position is ok, set it to be free and update and show the map 
-                self.my_map[current_pos_map[0], current_pos_map[1]] = 0
-                self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
-                self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
-                self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
-                self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-                time.sleep(0.0000001)            
-        else:
-            # if the current position is not ok, let it be known that the values are off, do not change the map array
-            print "values are off! current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+        # TODO: Should this be <=300 and 400 or 30 and 40?? It's in (x, y)
+        if (current_pos_map[0] <= 300 and current_pos_map[0] >= 0 and current_pos_map[1] <= 400 and current_pos_map[1] >= 0):
+            # if the current position is ok, set it to be free and update and show the map 
+            self.my_map[current_pos_map[0], current_pos_map[1]] = 0
+            self.my_map[current_pos_map[0], current_pos_map[1]-1] = 0
+            self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
+            self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
+            self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
+            print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+            time.sleep(0.0000001)   
+    
+    def updateMapObstacle(self, segment):
+        print "update map obstacle"
+        # position from (r,c) to (x, y)
+        (pos_x, pos_y) = self.positionToMap(self.position)
+
+        # obstacle coordinate calculation using depth
+        if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
+            time.sleep(0.0000001) 
+            self.obstacle_pos[0] = int(pos_x + abs(self.seg_depth[segment])*np.cos(self.orientation + radians(60 - 30*segment)))
+            self.obstacle_pos[1] = int(pos_y + abs(self.seg_depth[segment])*np.sin(self.orientation + radians(60 - 30*segment)))
+
+            # loop through to free coordinates in front of obstacles
+            for x in range(0, int(abs(pos_x - self.obstacle_pos[0]))):
+                for y in range(0, int(abs(self.obstacle_pos[1] - pos_y))):
+                    (x1, y1) = (min(self.obstacle_pos[0], pos_x) + x, 
+                                min(self.obstacle_pos[1], pos_y) + y)
+                    self.updateMapFree((x1, y1))
+                    time.sleep(0.0000001) 
+            
+            # final check before mapping obstacle (may not be necessary)
+            if (self.seg_depth[segment] != -1):
+                self.updateMapOccupied() 
+                rtime.sleep(0.0000001) 
+            else:
+                self.updateMapFree((self.obstacle_pos[0], self.obstacle_pos[1])) 
+                time.sleep(0.0000001) 
+         
 
     def updateMapOccupied(self):
         """
         self.obstacle_pos is in (x, y)
         self.position is in (r, c)
         """
+        print "obstacle loop"
+
         # update map with position of obstacle and knowledge that that position will be occupied 
         current_pos = self.position
         current_orr = self.orientation
@@ -213,8 +245,6 @@ class Integ_Test:
         current_pos_map = self.positionToMap(current_pos)
         obstacle_pos_map = self.obstacle_pos
         
-
-
         # check that obstacle pos in the map is ok
         if (current_pos_map[0] <= 30 and current_pos_map[0] >= 0 and current_pos_map[1] <= 40 and current_pos_map[1] >= 0):
                 # if the obstacle position is ok, set it to be occupied
@@ -229,45 +259,7 @@ class Integ_Test:
             # if the current position is not ok, let it be known that the values are off, do not change the map array
             print "obstacle map pos: %d, %d" % (obstacle_pos_map[0], obstacle_pos_map[1])
 
-    def freeLoop(self, i):
-        (pos_x, pos_y) = self.positionToMap(self.position)
-        #print "robot position: x: %d y: %d" % (pos_x, pos_y)
-        rospy.sleep(.001)
-        if (not(math.isnan(self.orientation)) and not(math.isnan(pos_x)) and not(math.isnan(pos_y))):
-         #   print "depth: %s" % (self.sec_depth[i])
-          #  print "calculated orientation %s" % (self.orientation + radians(80 - 40*i))
-            self.obstacle_pos[0] = int(pos_x + abs(self.sec_depth[i])*np.cos(self.orientation + radians(60 - 30*i)))
-            self.obstacle_pos[1] = int(pos_y + abs(self.sec_depth[i])*np.sin(self.orientation + radians(60 - 30*i)))
-           # print "obstacle position: x: %s y: %s" % (self.obstacle_pos[0], self.obstacle_pos[1])
 
-            obs_pos_x = True
-            obs_pos_y = True
-            x1 = 0
-            y1 = 0
-            if (pos_x > self.obstacle_pos[0]):
-               #print "object behind"
-                obs_pos_x = False
-            if (pos_y > self.obstacle_pos[1]):
-                #print "object to the right"
-                obs_pos_y = False
-            for x in range(0, int(abs(pos_x - self.obstacle_pos[0]))):
-                for y in range(0, int(abs(self.obstacle_pos[1] - pos_y))):
-                    if (obs_pos_x):
-                        x1 = pos_x + x
-                    else:
-                        x1 = self.obstacle_pos[0] + x
-                    if (obs_pos_y):
-                        y1 = pos_y + y
-                    else:
-                        y1 = self.obstacle_pos[1] + y
-                    self.updateMapFree((x1, y1))
-                    rospy.sleep(.000001)
-            if (self.sec_depth[i] != -1):
-                self.updateMapOccupied() 
-                rospy.sleep(.000001)
-            else:
-                self.updateMapFree((self.obstacle_pos[0], self.obstacle_pos[1])) 
-                rospy.sleep(.000001)
 
     def closest_num(self, my_arr, my_int):
         "find the number in array that is closes to a given number"
@@ -384,9 +376,8 @@ class Integ_Test:
             if (self.crbump | self.lbump):
                 rospy.sleep(1)
                 self.obstacle = True
-                self.sec_depth = .25
+
                 #need to make sure freeLoop works for bumps too!!!
-                self.freeLoop()
                 for i in range (0, 3):
                     self.cmd_vel.publish(backwards)
                     self.rate.sleep()
@@ -403,24 +394,16 @@ class Integ_Test:
                 rospy.sleep(1) 
                 self.crbump = False
                 self.lbump = False
-
+       # else:
+                #self.cmd_vel.publish(move_cmd)
             # turning 90 in each direction and surveying
            # for i in range(4):
                 #print "survey %d" % (i)
 
                 #self.cmd_vel.publish(turn)
                 #self.rate.sleep()
-            else:
-                for i in range(4):
-                    # self.cmd_vel.publish(turn)
-                    print "turned"
-                    rospy.sleep(.001)
-                    for j in range(NUM_SEGMENTS):
-                        self.rate.sleep()
-                        #print "section %d" % (j)
-                        self.freeLoop(j)
-                        print "mapped a segment"
-                    rospy.sleep(.001)
+
+
                 # for i in range(2):
                 #     self.cmd_vel.publish(move_cmd)
 
@@ -483,76 +466,100 @@ class Integ_Test:
         list_orientation = [orientation.x, orientation.y, orientation.z, orientation.w]
         self.orientation = tf.transformations.euler_from_quaternion(list_orientation)[-1]
 
+        
     def bound_object(self, img_in):
         """
-        Draw a bounding box around the largest object in the scene
-        :param img: RGB camera image
-        :return: Image with bounding box
+        - Draws a bounding box around the largest object in the scene and returns
+        - Lets us know when obstacles have been seen
+        - Lets us know when to avoid obstacles
+        :param: Image described by an array
+        :return: Image with bounding box 
         """
+
         img = np.copy(img_in)
+        img_height, img_width = img.shape[:2] # (480, 640) 
+        NUM_SEGMENTS = 5 #segmenting robot vision by 5 (could be changed to 3 if lag/ not accurate)
 
-        img_height, img_width = img.shape[:2]
 
-        # Get contours
-        for i in range(NUM_SEGMENTS):
-            sec_im = np.copy(img)
+        # Get contours on each segment
+        for segment in range(NUM_SEGMENTS):
             
-            sec_im[:, i*(img_width/NUM_SEGMENTS):(i+1)*(img_width/NUM_SEGMENTS)] = 0
-            #sec_im = cv2.bitwise_and(sec_im, sec_im, mask=sec_im)
-            contours, _ = cv2.findContours(sec_im, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            seg_im = img[:-200, segment*(img_width/NUM_SEGMENTS):(segment+1)*(img_width/NUM_SEGMENTS)]
+            contours, _ = cv2.findContours(seg_im, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             if len(contours) > 0:
+                # Find the largest contour
                 areas = [cv2.contourArea(c) for c in contours]
                 max_index = np.argmax(areas)
                 max_contour = contours[max_index]
-                new_obstacle_pos = centroid(max_contour)
+                new_obstacle_pos = cm.centroid(max_contour)
+                print "bound called %d" % (segment)
+
+                # returns obstacle depth that will allow obstacle to be mapped 
+                # sets depth of 0 to be -1 to avoid unintentional mapping
                 if new_obstacle_pos:
-                   # print "obs pos (h, w) (%d, %d)" % (new_obstacle_pos[0]-200, new_obstacle_pos[1])
-                    
-                    self.sec_depth[i] = (self.depth_image[new_obstacle_pos[0]-200][new_obstacle_pos[1]])/world_map_ratio 
-                    if (self.sec_depth[i] == 0):
-                        self.sec_depth[i] = -1
-                else:
-                    self.sec_depth[i] = -1
+                    self.seg_depth[segment] = (self.depth_image[new_obstacle_pos[0]-200][new_obstacle_pos[1]])/self.mapper.world_map_ratio 
+                    if (self.seg_depth[segment] == 0):
+                        self.seg_depth[segment] = -1
+                    #self.obstacle_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
+
+                # show where largest obstacle is 
+                cv2.drawContours(img, max_contour, -1, color=(0, 255, 0), thickness=3)
+        
+                # Draw rectangle bounding box on image
                 x, y, w, h = cv2.boundingRect(max_contour)
-                cv2.rectangle(img, (x, y), (x + w, y + h), color=(255, 255, 255), thickness=2)
-            
-            
+
+                # only want to map obstacle if it is large enough 
+                if (w*h > 200 & segment != 2):
+                    
+                    self.obstacle_seen = [1, segment]
+                    
+                # obstacle must be even larger or be right in front to get the state to be switched 
+                elif (w*h > 400 | ((w*h > 200) & (segment == 2))):
+                    
+                    self.state = 'avoid_obstacle'
+                    # Differentiate between left and right objects
+                    if (segment < 2): 
+                        self.obstacle_side = 'left'
+                    if (segment == 2):
+                        self.obstacle_side = 'center'
+                    else:
+                        self.obstacle_side = 'right'         
+
         return img
 
     def process_depth_image(self, data):
-        # Use bridge to convert to CV::Mat type. (i.e., convert image from ROS format to OpenCV format)
-        # NOTE: SOME DATA WILL BE 'NaN'
-        # and numbers correspond to distance to camera in meters
-        # This imports as the default data encoding. For the ASUS Xtion cameras,
-        # this is '32FC1' (single precision floating point [32F], single channel [C1])
+        """ 
+        - Use bridge to convert to CV::Mat type. (i.e., convert image from ROS format to OpenCV format)
+        - Displays thresholded depth image 
+        - Calls bound_object function on depth image
+        :param: Data from depth camera
+        :return: None
+        """
         try:
-        
+
             cv_image = self.bridge.imgmsg_to_cv2(data)
 
+            # create a mask to restrict the depth that can be seen and floor height
             mask = cv2.inRange(cv_image, 0.1, 1)
-            
-            # TODO: try mask[: -FLOOR_HEIGHT, :]
-            mask[ 400:, :] = 0
+            #mask[:, :] = 0
             im_mask = cv2.bitwise_and(cv_image, cv_image, mask=mask)
             self.depth_image = im_mask
+
+            # bound the largest object per segment
             dst2 = self.bound_object(mask)
 
 
-
-
-            # Display the thresholded depth image
             # Normalize values to range between 0 and 1 for displaying
             norm_img = im_mask
             cv2.normalize(norm_img, norm_img, 0, 1, cv2.NORM_MINMAX)
-    # not necessary
 
             # Displays thresholded depth image   
             cv2.imshow('Depth Image', norm_img)    
             cv2.waitKey(3)
+
         except CvBridgeError, err:
             rospy.loginfo(err)
-
-    
+        
     def process_bump_sensing(self, data):
         """
         If bump data is received, process the data

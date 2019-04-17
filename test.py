@@ -81,6 +81,7 @@ class Integ_Test:
         # create blank array of negative ones to represent blank map 
         self.my_map = -np.ones((40,30))
 
+
         self.depth_image =  np.zeros((480, 640))
         # Localization determined from EKF
         # Position is a geometry_msgs/Point object with (x,y,z) fields
@@ -91,7 +92,7 @@ class Integ_Test:
         # handle obstacles
         self.obstacle_seen = [0, -1] # 0 for false, -1 for segment of obstacle
         self.obstacle_depth = -1
-        self.mapper.seg_depth = self.seg_depth = [-1, -1, -1, -1, -1]
+        self.seg_depth = [-1, -1, -1, -1, -1]
         self.obstacle_pos = [0, 0]
         self.obstacle = False
         self.obstacle_side = 'right'
@@ -109,7 +110,7 @@ class Integ_Test:
         self.robstacle = False
 
         # section based on obstacles
-        self.sec_depth = [-1, -1, -1, -1, -1]
+        self.seg_depth = [-1, -1, -1, -1, -1]
 
         self.paused = False
         self.position = None
@@ -178,7 +179,6 @@ class Integ_Test:
         # first map update, need to do twice because it doesn't show up nicely the first time .p
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
         self.mapObj.UpdateMapDisplay(self.my_map, (0, 0))
-      
         # show map for this amount of time 
         time.sleep(0.001)
 
@@ -187,7 +187,7 @@ class Integ_Test:
         Takes a (x, y) as a parameter.
         Calling UpdateMapDisplay on (r, c)
         """
-        print "map free"
+#print "map free"
         # update map with free position
         current_pos = self.positionFromMap(current_pos_map)
 
@@ -200,11 +200,11 @@ class Integ_Test:
             self.my_map[current_pos_map[0]-1, current_pos_map[1]-1] = 0
             self.my_map[current_pos_map[0]-1, current_pos_map[1]] = 0
             self.mapObj.UpdateMapDisplay(self.my_map, current_pos)
-            print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
+            #print "current map pos: %d, %d" % (current_pos_map[0], current_pos_map[1])
             time.sleep(0.0000001)   
     
     def updateMapObstacle(self, segment):
-        print "update map obstacle"
+       # print "update map obstacle"
         # position from (r,c) to (x, y)
         (pos_x, pos_y) = self.positionToMap(self.position)
 
@@ -225,7 +225,7 @@ class Integ_Test:
             # final check before mapping obstacle (may not be necessary)
             if (self.seg_depth[segment] != -1):
                 self.updateMapOccupied() 
-                rtime.sleep(0.0000001) 
+                time.sleep(0.0000001) 
             else:
                 self.updateMapFree((self.obstacle_pos[0], self.obstacle_pos[1])) 
                 time.sleep(0.0000001) 
@@ -236,7 +236,7 @@ class Integ_Test:
         self.obstacle_pos is in (x, y)
         self.position is in (r, c)
         """
-        print "obstacle loop"
+      #  print "obstacle loop"
 
         # update map with position of obstacle and knowledge that that position will be occupied 
         current_pos = self.position
@@ -425,15 +425,16 @@ class Integ_Test:
             #         rospy.sleep(.5)
             #     self.lobstacle = False
 
-            # else:
-            #     self.updateMapFree(self.positionToMap(self.position))
-            #     move_cmd.linear.x = self.lin_speed
+            else:
+                self.updateMapFree(self.positionToMap(self.position))
+                move_cmd.linear.x = 0
             #     move_cmd.angular.z = 0
 
 
             # # publish the velocity
-            # self.cmd_vel.publish(move_cmd)
-            # self.rate.sleep()
+          #  print "hi"
+            self.cmd_vel.publish(move_cmd)
+            self.rate.sleep()
 
             # # if this code works lol 
             # # for i in range (0, 5):
@@ -483,7 +484,7 @@ class Integ_Test:
 
         # Get contours on each segment
         for segment in range(NUM_SEGMENTS):
-            
+            time.sleep(0.0000001)
             seg_im = img[:-200, segment*(img_width/NUM_SEGMENTS):(segment+1)*(img_width/NUM_SEGMENTS)]
             contours, _ = cv2.findContours(seg_im, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             if len(contours) > 0:
@@ -491,16 +492,17 @@ class Integ_Test:
                 areas = [cv2.contourArea(c) for c in contours]
                 max_index = np.argmax(areas)
                 max_contour = contours[max_index]
-                new_obstacle_pos = cm.centroid(max_contour)
-                print "bound called %d" % (segment)
-
+                new_obstacle_pos = centroid(max_contour)
+              #  print "bound called %d" % (segment)
+                time.sleep(0.0000001)
                 # returns obstacle depth that will allow obstacle to be mapped 
                 # sets depth of 0 to be -1 to avoid unintentional mapping
                 if new_obstacle_pos:
-                    self.seg_depth[segment] = (self.depth_image[new_obstacle_pos[0]-200][new_obstacle_pos[1]])/self.mapper.world_map_ratio 
+                    self.seg_depth[segment] = (self.depth_image[new_obstacle_pos[0]-200][new_obstacle_pos[1]])/world_map_ratio 
                     if (self.seg_depth[segment] == 0):
                         self.seg_depth[segment] = -1
-                    #self.obstacle_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
+                    #print "depth!"
+                    # self.seg_depth =  self.depth_image[new_obstacle_pos[0]][new_obstacle_pos[1]] 
 
                 # show where largest obstacle is 
                 cv2.drawContours(img, max_contour, -1, color=(0, 255, 0), thickness=3)
@@ -508,14 +510,14 @@ class Integ_Test:
                 # Draw rectangle bounding box on image
                 x, y, w, h = cv2.boundingRect(max_contour)
 
-                # only want to map obstacle if it is large enough 
+                # only want to map obstacle if it is large enough jjj
                 if (w*h > 200 & segment != 2):
-                    
+                    self.updateMapObstacle(segment)
                     self.obstacle_seen = [1, segment]
                     
                 # obstacle must be even larger or be right in front to get the state to be switched 
                 elif (w*h > 400 | ((w*h > 200) & (segment == 2))):
-                    
+                    self.updateMapObstacle(segment)
                     self.state = 'avoid_obstacle'
                     # Differentiate between left and right objects
                     if (segment < 2): 

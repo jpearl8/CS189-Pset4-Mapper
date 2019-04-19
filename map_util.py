@@ -1,6 +1,5 @@
 """
 Package for drawing the generated map of the world for Pset 4 of CS 189.
-
 2019-03: Created by Mark Petersen
 """
 
@@ -22,10 +21,10 @@ class MapDrawer:
         coordinates. `positionToMap` must define a right-handed coordinate
         system.
         """
-        self.map_size = (40,30)
+        self.map_size = (30,40)
         self.draw_scale = 16
         self.map = -np.ones(self.map_size).astype(int)
-        self.drawn_map = np.zeros((640,480,3))
+        self.drawn_map = np.zeros((480,640,3))
         self.map_colors = [[0, 0, 0], [1, 1, 1], [1, 0, 0]]
         self.positionToMap = positionToMap
 
@@ -37,6 +36,14 @@ class MapDrawer:
         axis_test = atan2(-(y_axis[0] - origin[0]), y_axis[1]-origin[1])
         angle_xy = np.unwrap([0, axis_test - self.axis_orientation])[1]
         assert angle_xy > 0, "positionToMap does not define a right-handed coordinate system"
+
+        self.bot_scale = int(14 * np.max(np.abs(np.array(x_axis) - np.array(origin))) / 5)
+
+    def positionToDraw(self, pos):
+        grid_pos = self.positionToMap(pos)
+        grid_pos = (int(self.draw_scale*grid_pos[1]),
+                    int(self.draw_scale*grid_pos[0]))
+        return grid_pos
 
     def UpdateMapDisplay(self, new_map, position, orientation=None, extra_img=None):
         """
@@ -61,12 +68,10 @@ class MapDrawer:
             cv2.rectangle(self.drawn_map, pt1, pt2, color, -1)
 
         img = np.copy(self.drawn_map)
-        arrow_size = 10
+        arrow_size = self.bot_scale - 4
 
-        start_pos = self.positionToMap((0,0))
-        start_pos = (int(self.draw_scale*start_pos[1]),
-                     int(self.draw_scale*start_pos[0]))
-        cv2.circle(img, start_pos, self.draw_scale - 2, [0, 1, 0], -1)
+        start_pos = self.positionToDraw((0,0))
+        cv2.circle(img, start_pos, self.bot_scale, [0, 1, 0], -1)
 
         if orientation is not None:
             arrow_start = (int(start_pos[0] - arrow_size*cos(self.axis_orientation)),
@@ -75,10 +80,8 @@ class MapDrawer:
                          int(start_pos[1] - arrow_size*sin(self.axis_orientation)))
             cv2.line(img, arrow_start, arrow_end, [0, 0, 0], 1)
 
-        current_pos = self.positionToMap(position)
-        current_pos = (int(self.draw_scale*current_pos[1]),
-                       int(self.draw_scale*current_pos[0]))
-        cv2.circle(img, current_pos, self.draw_scale - 2, [0, 0, 1], -1)
+        current_pos = self.positionToDraw(position)
+        cv2.circle(img, current_pos, self.bot_scale, [0, 0, 1], -1)
 
         if orientation is not None:
             current_oriention = self.axis_orientation + orientation
@@ -102,12 +105,10 @@ class MapDrawer:
         current orientation will also be included in the saved image.
         """
         img = np.copy(self.drawn_map)
-        arrow_size = 10
+        arrow_size = self.bot_scale - 4
 
-        start_pos = self.positionToMap((0,0))
-        start_pos = (int(self.draw_scale*start_pos[1]),
-                     int(self.draw_scale*start_pos[0]))
-        cv2.circle(img, start_pos, self.draw_scale - 2, [0, 1, 0], -1)
+        start_pos = self.positionToDraw((0,0))
+        cv2.circle(img, start_pos, self.bot_scale, [0, 1, 0], -1)
 
         if orientation is not None:
             arrow_start = (int(start_pos[0] - arrow_size*cos(self.axis_orientation)),
@@ -116,10 +117,8 @@ class MapDrawer:
                          int(start_pos[1] - arrow_size*sin(self.axis_orientation)))
             cv2.line(img, arrow_start, arrow_end, [0, 0, 0], 1)
 
-        current_pos = self.positionToMap(position)
-        current_pos = (int(self.draw_scale*current_pos[1]),
-                       int(self.draw_scale*current_pos[0]))
-        cv2.circle(img, current_pos, self.draw_scale - 2, [0, 0, 1], -1)
+        current_pos = self.positionToDraw(position)
+        cv2.circle(img, current_pos, self.bot_scale, [0, 0, 1], -1)
 
         if orientation is not None:
             current_oriention = self.axis_orientation + orientation
@@ -129,7 +128,26 @@ class MapDrawer:
                          int(current_pos[1] - arrow_size*sin(current_oriention)))
             cv2.line(img, arrow_start, arrow_end, [0, 0, 0], 1)
 
-        cv2.imwrite(filename, img)
+        cv2.imwrite(filename, img * 255)
+
+    def TestPositionToMap(self):
+
+        origin = self.positionToDraw((0,0))
+        x_axis = self.positionToDraw((1, 0))
+        y_axis = self.positionToDraw((0, 1))
+
+        img = np.zeros_like(self.drawn_map)
+        cv2.circle(img, origin, self.bot_scale, [0, 1, 0], -1)
+        cv2.circle(img, x_axis, self.bot_scale, [0, 0, 1], -1)
+        cv2.circle(img, y_axis, self.bot_scale, [1, 0, 0], -1)
+
+        x_dir = tuple(2*np.array(x_axis) - np.array(origin))
+        y_dir = tuple(2*np.array(y_axis) - np.array(origin))
+        cv2.line(img, origin, x_dir, [1, 1, 1], 2)
+        cv2.line(img, origin, y_dir, [1, 1, 1], 2)
+
+        cv2.imshow('Map', img)
+        cv2.waitKey(5)
 
 
 if __name__ == '__main__':
@@ -147,6 +165,9 @@ if __name__ == '__main__':
     # Sending first image twice as the first image drawn does not fully render
     mapper.UpdateMapDisplay(my_map, (0, 0))
     mapper.UpdateMapDisplay(my_map, (0, 0))
+    time.sleep(3)
+
+    mapper.TestPositionToMap()
     time.sleep(3)
 
     start_pos = (0, 0)

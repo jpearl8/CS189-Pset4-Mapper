@@ -79,7 +79,9 @@ class Integ_Test:
         self.mapObj = mp.MapDrawer(self.positionToMap)
 
         # create blank array of negative ones to represent blank map 
-        self.my_map = -np.ones((40,30))
+        
+        self.map_size = (30,40)
+        self.my_map = -np.ones(self.map_size).astype(int)
 
 
         self.depth_image =  np.zeros((480, 640))

@@ -2,7 +2,7 @@
 The Autonomous Mapper
 Readme for 4b:
 
-Our final solution is in segment.py
+Our final solution is in segmenting.py
 
 The first solution to the problem made too small of a map and too inaccurate of a map. Restricting the robot's vision and having it only rely upon its EKF and orientation data (which gets less accurate the more the robot runs), was not the correct approach. For the final solution, the robot's vision was expanded and segmented. The robot mapped different obstacles in each of its 5 segments to produce a more accurate map. While EKF and orientation data gets off, relative positioning is more accurate and reliable. 
 

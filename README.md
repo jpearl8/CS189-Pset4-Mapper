@@ -1,16 +1,18 @@
 # pset-4
 The Autonomous Mapper
 Readme for 4b:
-Our solution is in integ.py
+
+Our final solution is in segment.py
+
+The first solution to the problem made too small of a map and too inaccurate of a map. Restricting the robot's vision and having it only rely upon its EKF and orientation data (which gets less accurate the more the robot runs), was not the correct approach. For the final solution, the robot's vision was expanded and segmented. The robot mapped different obstacles in each of its 5 segments to produce a more accurate map. While EKF and orientation data gets off, relative positioning is more accurate and reliable. 
+
+
+Our first solution is in integ.py
 
 We took 4a as our basis code to build off and adapt for the next portion of the pset. 
 The two distinct changes from 4a to 4b are changes made to obstacle location interpretation and calculation and the frontear based exploration.
 
 In accordance to obstacle location interpretation, two changes were made. The depth camera was used to calculate the location of the obstacle on the grid. Because the depth was kept in a range of less than a meter, the orientation of the robot was still used in the depth calculation. After the coordinates of the obstacle were calculated, the function looped through the the grid between the robot's position and the obstacle's position, marking those coordinates as free. Instead of going directly across the line where the obstacle is located, marking the box shape in the loop yielded mapping results at a faster rate and did not have a noticably different accuracy difference because the range of the depth camera has at a smaller maximum distance.
-
-
-
-
 
 
 
